@@ -2058,7 +2058,7 @@ header > div:first-child{
                     </div>
                   </sc-for>
                 </div>
-                <span sc-camel-on-click="{{ goContact }}" style="display:inline-flex;align-items:center;gap:9px;margin-top:26px;background:#C0122F;color:#fff;font-size:15px;font-weight:600;padding:13px 26px;border-radius:999px;cursor:pointer;transition:background .18s,transform .18s" style-hover="background:#93091F;transform:translateY(-1px)">Apply Now <span>→</span></span>
+                <span sc-camel-on-click="{{ r.apply }}" style="display:inline-flex;align-items:center;gap:9px;margin-top:26px;background:#C0122F;color:#fff;font-size:15px;font-weight:600;padding:13px 26px;border-radius:999px;cursor:pointer;transition:background .18s,transform .18s" style-hover="background:#93091F;transform:translateY(-1px)">Apply Now <span>→</span></span>
               </div>
             </sc-if>
           </div>
@@ -2075,6 +2075,78 @@ header > div:first-child{
     </div>
   </section>
 </main>
+</sc-if>
+
+<sc-if value="{{ applyOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:12000;background:rgba(13,15,18,.72);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
+    <div style="width:min(820px,100%);max-height:calc(100vh - 48px);overflow-y:auto;background:#fff;border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.3);position:relative">
+      <div style="position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid #E6E7EB;padding:24px 28px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#C0122F;font-weight:600">Career Application</div>
+          <h2 style="font-family:Manrope,sans-serif;font-size:26px;line-height:1.2;margin:8px 0 0;color:#111318">{{ selectedCareerTitle }}</h2>
+        </div>
+        <button type="button" sc-camel-on-click="{{ closeApplication }}" aria-label="Close application form" style="width:40px;height:40px;flex:0 0 40px;border:1px solid #E1E3E8;border-radius:50%;background:#fff;color:#111318;font-size:24px;line-height:1;cursor:pointer">×</button>
+      </div>
+
+      <sc-if value="{{ applicationSubmitted }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:64px 32px 70px;text-align:center">
+          <div style="width:64px;height:64px;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#FCEEF0;color:#C0122F;font-size:30px;font-weight:700">✓</div>
+          <h3 style="font-family:Manrope,sans-serif;font-size:28px;margin:22px 0 0;color:#111318">Application Submitted</h3>
+          <p style="font-size:16px;line-height:1.65;color:#5A6070;margin:12px auto 0;max-width:520px">Thank you. Your application has been received by Biltrax.</p>
+          <button type="button" sc-camel-on-click="{{ closeApplication }}" style="margin-top:28px;border:0;border-radius:999px;background:#C0122F;color:#fff;font-size:15px;font-weight:600;padding:13px 26px;cursor:pointer">Back to Opportunities</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ applicationNotSubmitted }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:28px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 22px">
+            <label style="display:grid;gap:7px">
+              <span style="font-size:13px;font-weight:600;color:#3C424E">First name *</span>
+              <input data-application-field="first_name" type="text" autocomplete="given-name" style="font-size:15px;padding:12px 14px;border:1px solid #D8DAE0;border-radius:9px;outline:none">
+            </label>
+            <label style="display:grid;gap:7px">
+              <span style="font-size:13px;font-weight:600;color:#3C424E">Last name *</span>
+              <input data-application-field="last_name" type="text" autocomplete="family-name" style="font-size:15px;padding:12px 14px;border:1px solid #D8DAE0;border-radius:9px;outline:none">
+            </label>
+            <label style="display:grid;gap:7px">
+              <span style="font-size:13px;font-weight:600;color:#3C424E">Email *</span>
+              <input data-application-field="email" type="email" autocomplete="email" placeholder="name@example.com" style="font-size:15px;padding:12px 14px;border:1px solid #D8DAE0;border-radius:9px;outline:none">
+            </label>
+            <label style="display:grid;gap:7px">
+              <span style="font-size:13px;font-weight:600;color:#3C424E">Mobile number *</span>
+              <input data-application-field="mobile_number" type="tel" autocomplete="tel" style="font-size:15px;padding:12px 14px;border:1px solid #D8DAE0;border-radius:9px;outline:none">
+            </label>
+            <label style="display:grid;gap:7px">
+              <span style="font-size:13px;font-weight:600;color:#3C424E">Qualification *</span>
+              <input data-application-field="qualification" type="text" placeholder="e.g. B.E. Civil Engineering" style="font-size:15px;padding:12px 14px;border:1px solid #D8DAE0;border-radius:9px;outline:none">
+            </label>
+            <label style="display:grid;gap:7px">
+              <span style="font-size:13px;font-weight:600;color:#3C424E">Experience (years) *</span>
+              <input data-application-field="experience_years" type="number" min="0" max="60" step="0.1" placeholder="e.g. 3" style="font-size:15px;padding:12px 14px;border:1px solid #D8DAE0;border-radius:9px;outline:none">
+            </label>
+            <label style="display:grid;gap:7px;grid-column:1/-1">
+              <span style="font-size:13px;font-weight:600;color:#3C424E">CV / Resume link *</span>
+              <input data-application-field="cv_link" type="url" placeholder="https://drive.google.com/... or another public CV link" style="font-size:15px;padding:12px 14px;border:1px solid #D8DAE0;border-radius:9px;outline:none">
+            </label>
+            <label style="display:grid;gap:7px;grid-column:1/-1">
+              <span style="font-size:13px;font-weight:600;color:#3C424E">Message</span>
+              <textarea data-application-field="message" rows="4" placeholder="Tell us briefly about your background." style="font-size:15px;padding:12px 14px;border:1px solid #D8DAE0;border-radius:9px;outline:none;resize:vertical"></textarea>
+            </label>
+          </div>
+
+          <label style="display:flex;align-items:flex-start;gap:11px;margin-top:22px;padding:16px;border:1px solid #E6E7EB;border-radius:10px;background:#FAFAFB;cursor:pointer">
+            <input data-application-field="location_confirmed" type="checkbox" style="margin-top:3px;width:17px;height:17px;accent-color:#C0122F">
+            <span style="font-size:13.5px;line-height:1.55;color:#3C424E">I confirm that I currently reside in Mumbai (Kurla to Chembur) or Navi Mumbai / Thane to Kalyan only. *</span>
+          </label>
+
+          <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:26px;padding-top:22px;border-top:1px solid #E6E7EB">
+            <button type="button" sc-camel-on-click="{{ closeApplication }}" style="border:1px solid #D8DAE0;border-radius:999px;background:#fff;color:#303642;font-size:15px;font-weight:600;padding:12px 22px;cursor:pointer">Cancel</button>
+            <button type="button" sc-camel-on-click="{{ submitApplication }}" style="border:0;border-radius:999px;background:#C0122F;color:#fff;font-size:15px;font-weight:600;padding:12px 24px;cursor:pointer">{{ applicationButtonText }}</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
 </sc-if>
 
 <footer style="border-top:1px solid #E6E7EB;background:#fff;margin-top:auto">
@@ -2277,7 +2349,7 @@ class Component extends DCLogic {
     { pre: "₹", n: 13260492, dec: 0, suf: " Cr", label: "Construction value under coverage" },
     { pre: "$", n: 1.38, dec: 2, suf: " Tr", label: "Construction value in USD terms" },
     { pre: "", n: 18, dec: 0, suf: " Bn-SqFt", label: "Construction area tracked" },
-    { pre: "", n: 34090, dec: 0, suf: "", label: "Project owners & developers " },
+    { pre: "", n: 34090, dec: 0, suf: "", label: "Project owners & developers " },
     { pre: "", n: 8411, dec: 0, suf: "", label: "Architecture and consulting firms" },
     { pre: "", n: 9623, dec: 0, suf: "", label: "Construction firms & contractors" },
     { pre: "", n: 11018664, dec: 0, suf: "", label: "Brand approvals recorded" }
@@ -2288,7 +2360,8 @@ class Component extends DCLogic {
     view: "home", stepI: 0, feed: FEED_POOL.slice(0, 6).map((f, i) => ({ ...f, ago: (i * 7 + 2) + "m ago", key: "s" + i })),
     tick: 0, team: 0, query: "", sector: "All sectors", stage: "All stages", region: "All regions",
     activeId: null, submitted: false, chips: {}, counts: [0, 0, 0, 0], clock: "",
-    platOpen: false, compOpen: false, carOpen: false, openRole: 0, bx1Tab: 0, pulseFilter: "All publications"
+    platOpen: false, compOpen: false, carOpen: false, openRole: 0, bx1Tab: 0, pulseFilter: "All publications",
+    applyOpen: false, selectedCareer: null, applicationSubmitted: false, applicationSubmitting: false
   };
 
   componentDidMount() {
@@ -2662,13 +2735,81 @@ async loadCmsData() {
       gallery: GALLERY,
       roleCount: ROLES.length + " open roles",
       roles: ROLES.map((r, i) => ({
-        n: "0" + (i + 1), title: r.title, meta: r.meta, duties: r.duties,
+        n: "0" + (i + 1), id: r.id, title: r.title, job_title: r.job_title || r.title, meta: r.meta, duties: r.duties,
         open: s.openRole === i,
         toggle: () => this.setState(st => ({ openRole: st.openRole === i ? null : i })),
+        apply: () => this.setState({ applyOpen: true, selectedCareer: r, applicationSubmitted: false, applicationSubmitting: false }),
         border: s.openRole === i ? "#C0122F" : "#E6E7EB",
         iconColor: s.openRole === i ? "#C0122F" : "#7A8090",
         rot: s.openRole === i ? "45deg" : "0deg"
       })),
+
+      applyOpen: !!s.applyOpen,
+      applicationSubmitted: !!s.applicationSubmitted,
+      applicationNotSubmitted: !s.applicationSubmitted,
+      applicationSubmitting: !!s.applicationSubmitting,
+      applicationButtonText: s.applicationSubmitting ? "Submitting..." : "Submit Application",
+      selectedCareerTitle: s.selectedCareer ? (s.selectedCareer.job_title || s.selectedCareer.title || "") : "",
+      closeApplication: () => this.setState({ applyOpen: false, selectedCareer: null, applicationSubmitted: false, applicationSubmitting: false }),
+      submitApplication: async () => {
+        if (this.state.applicationSubmitting) return;
+
+        const get = (name) => {
+          const el = document.querySelector('[data-application-field="' + name + '"]');
+          return el ? String(el.value || "").trim() : "";
+        };
+        const confirmedEl = document.querySelector('[data-application-field="location_confirmed"]');
+
+        const selected = this.state.selectedCareer || {};
+        const payload = {
+          career_id: selected.id || null,
+          position_applied_for: selected.job_title || selected.title || get("position_applied_for"),
+          first_name: get("first_name"),
+          last_name: get("last_name"),
+          email: get("email"),
+          mobile_number: get("mobile_number"),
+          cv_link: get("cv_link"),
+          qualification: get("qualification"),
+          experience_years: get("experience_years"),
+          message: get("message"),
+          location_confirmed: !!(confirmedEl && confirmedEl.checked)
+        };
+
+        if (!payload.first_name || !payload.last_name || !payload.email || !payload.mobile_number || !payload.cv_link || !payload.qualification || payload.experience_years === "") {
+          alert("Please fill all required fields.");
+          return;
+        }
+        if (!payload.location_confirmed) {
+          alert("Please confirm the location requirement.");
+          return;
+        }
+
+        this.setState({ applicationSubmitting: true });
+        try {
+          const response = await fetch("/api/opportunity-enquiry", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          let result = {};
+          try { result = await response.json(); } catch (_) {}
+
+          if (!response.ok) {
+            if (response.status === 422 && result.errors) {
+              const firstError = Object.values(result.errors).flat()[0];
+              throw new Error(firstError || "Please check the application fields.");
+            }
+            throw new Error(result.message || "Unable to submit application.");
+          }
+
+          this.setState({ applicationSubmitted: true, applicationSubmitting: false });
+        } catch (error) {
+          console.error(error);
+          this.setState({ applicationSubmitting: false });
+          alert(error.message || "Unable to submit application.");
+        }
+      },
 
       isAbout: s.view === "about", isTeam: s.view === "team", isSocial: s.view === "social", isContact: s.view === "contact",
       compOpen: !!s.compOpen,
