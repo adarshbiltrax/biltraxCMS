@@ -254,6 +254,29 @@ function ChevronIcon() {
     );
 }
 
+function OpportunityEnquiriesIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M9 6h11" />
+            <path d="M9 12h11" />
+            <path d="M9 18h11" />
+
+            <path d="M4 6h.01" />
+            <path d="M4 12h.01" />
+            <path d="M4 18h.01" />
+        </svg>
+    );
+}
+
 
 /*
 |--------------------------------------------------------------------------
@@ -286,6 +309,21 @@ const navigation = [
         match: (url) =>
             url.startsWith('/cms/careers'),
     },
+
+    {
+    label: 'Opportunity Enquiries',
+
+    href:
+        '/cms/opportunity-enquiries',
+
+    icon:
+        OpportunityEnquiriesIcon,
+
+    match: (url) =>
+        url.startsWith(
+            '/cms/opportunity-enquiries'
+        ),
+},
 
     {
         label: 'Enquiries',

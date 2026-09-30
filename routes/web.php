@@ -11,7 +11,9 @@ use App\Http\Controllers\Cms\ProjectController;
 use App\Http\Controllers\Cms\CareerController;
 use App\Http\Controllers\Cms\MessageController;
 use App\Http\Controllers\Cms\ContactEnquiryController;
+use App\Http\Controllers\OpportunityEnquiryController as PublicOpportunityEnquiryController;
 
+use App\Http\Controllers\Cms\OpportunityEnquiryController as CmsOpportunityEnquiryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +54,16 @@ Route::post('/api/contact', [
     'contact',
 ])->withoutMiddleware([
     ValidateCsrfToken::class,
+]);
+
+Route::post(
+    '/api/opportunity-enquiry',
+    [
+        PublicOpportunityEnquiryController::class,
+        'store'
+    ]
+)->withoutMiddleware([
+    ValidateCsrfToken::class
 ]);
 
 
@@ -214,5 +226,45 @@ Route::prefix('cms')
                 'update',
             ]
         )->name('contact-enquiries.update');
+
+
+/*
+|--------------------------------------------------------------------------
+| OPPORTUNITY ENQUIRIES
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/opportunity-enquiries',
+    [
+        CmsOpportunityEnquiryController::class,
+        'index'
+    ]
+)->name(
+    'opportunity-enquiries.index'
+);
+
+
+Route::get(
+    '/opportunity-enquiries/{opportunityEnquiry}',
+    [
+        CmsOpportunityEnquiryController::class,
+        'show'
+    ]
+)->name(
+    'opportunity-enquiries.show'
+);
+
+
+Route::patch(
+    '/opportunity-enquiries/{opportunityEnquiry}',
+    [
+        CmsOpportunityEnquiryController::class,
+        'update'
+    ]
+)->name(
+    'opportunity-enquiries.update'
+);
+
 
     });
