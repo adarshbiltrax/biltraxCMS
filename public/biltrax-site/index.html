@@ -972,7 +972,10 @@ header > div:first-child{
   @keyframes bxPulse { 0% { box-shadow: 0 0 0 0 rgba(192,18,47,.45); } 70% { box-shadow: 0 0 0 8px rgba(192,18,47,0); } 100% { box-shadow: 0 0 0 0 rgba(192,18,47,0); } }
   @keyframes bxDrift { from { background-position: 0 0; } to { background-position: 0 -1200px; } }
   @keyframes bxSweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(220%); } }
-  @keyframes bxMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes bxMarquee {
+    from { transform: translate3d(0,0,0); }
+    to { transform: translate3d(calc(-50% - 22px),0,0); }
+  }
   @keyframes bxFloat { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,40px) scale(1.08); } }
   [data-reveal][data-watched] { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(.22,.7,.3,1), transform .7s cubic-bezier(.22,.7,.3,1); }
   [data-reveal][data-shown] { opacity: 1 !important; transform: none !important; }
@@ -1762,8 +1765,8 @@ header > div:first-child{
         </sc-for>
       </div>
     </div>
-    <div style="position:relative;margin-top:56px;border-top:1px solid #23262D;border-bottom:1px solid #23262D;overflow:hidden;padding:16px 0;background:#0A0C0F">
-      <div style="display:flex;gap:44px;width:max-content;animation:bxMarquee 38s linear infinite;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;color:#4E545F">
+    <div style="position:relative;margin-top:56px;border-top:1px solid #23262D;border-bottom:1px solid #23262D;overflow:hidden;padding:16px 0;background:#0A0C0F;mask-image:linear-gradient(to right,transparent 0,#000 32px,#000 calc(100% - 32px),transparent 100%);-webkit-mask-image:linear-gradient(to right,transparent 0,#000 32px,#000 calc(100% - 32px),transparent 100%)">
+      <div style="display:flex;align-items:center;gap:44px;width:max-content;animation:bxMarquee 38s linear infinite;will-change:transform;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.35;letter-spacing:.18em;text-transform:uppercase;color:#FFFFFF">
         <sc-for list="{{ marquee }}" as="m" hint-placeholder-count="20">
           <span style="white-space:nowrap">{{ m }}</span>
         </sc-for>
