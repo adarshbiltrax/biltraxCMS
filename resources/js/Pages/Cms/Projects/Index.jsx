@@ -1183,7 +1183,7 @@ export default function Index({
 
 
                         <Link
-                            href="/cms/projects/create"
+                            href="/cms/bx1/projects"
                             className="project-add-button"
                         >
 

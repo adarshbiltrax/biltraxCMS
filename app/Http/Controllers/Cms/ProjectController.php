@@ -4,90 +4,303 @@ namespace App\Http\Controllers\Cms;
 
 use App\Http\Controllers\Controller;
 use App\Models\WebsiteProject;
-
 use Illuminate\Http\Request;
-
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProjectController extends Controller
 {
+    /*
+    |--------------------------------------------------------------------------
+    | Project Listing
+    |--------------------------------------------------------------------------
+    */
+
     public function index(Request $request): Response
     {
         $query = WebsiteProject::query();
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | CMS Search
+        |--------------------------------------------------------------------------
+        */
+
         if ($request->filled('q')) {
 
-            $search = $request->input('q');
+            $search = trim(
+                (string) $request->input('q')
+            );
 
-            $query->where(function ($q) use ($search) {
 
-                $q->where(
-                    'project_name',
-                    'like',
-                    "%{$search}%"
-                )
-                ->orWhere(
-                    'sector',
-                    'like',
-                    "%{$search}%"
-                )
-                ->orWhere(
-                    'location',
-                    'like',
-                    "%{$search}%"
-                );
+            $query->where(
+                function ($q) use ($search) {
 
-            });
+                    $q->where(
+                        'project_name',
+                        'like',
+                        "%{$search}%"
+                    )
+
+                    ->orWhere(
+                        'sector',
+                        'like',
+                        "%{$search}%"
+                    )
+
+                    ->orWhere(
+                        'project_type',
+                        'like',
+                        "%{$search}%"
+                    )
+
+                    ->orWhere(
+                        'project_stage',
+                        'like',
+                        "%{$search}%"
+                    )
+
+                    ->orWhere(
+                        'city',
+                        'like',
+                        "%{$search}%"
+                    )
+
+                    ->orWhere(
+                        'state',
+                        'like',
+                        "%{$search}%"
+                    )
+
+                    ->orWhere(
+                        'region',
+                        'like',
+                        "%{$search}%"
+                    )
+
+                    ->orWhere(
+                        'location',
+                        'like',
+                        "%{$search}%"
+                    );
+                }
+            );
         }
+
 
         return Inertia::render(
             'Cms/Projects/Index',
             [
-                'projects' => $query
-                    ->orderBy('sort_order')
-                    ->orderByDesc('id')
-                    ->paginate(15)
-                    ->withQueryString(),
+                'projects' =>
+                    $query
+                        ->orderBy('sort_order')
+                        ->orderByDesc('id')
+                        ->paginate(15)
+                        ->withQueryString(),
 
                 'filters' => [
-                    'q' => $request->input(
-                        'q',
-                        ''
-                    ),
+                    'q' =>
+                        $request->input(
+                            'q',
+                            ''
+                        ),
                 ],
             ]
         );
     }
 
 
-    public function create(): Response
-    {
+    /*
+    |--------------------------------------------------------------------------
+    | Create Project
+    |--------------------------------------------------------------------------
+    */
+
+    public function create(
+        Request $request
+    ): Response {
+
+        $project = null;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | BX1 Import
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $request->input('source')
+            ===
+            'bx1'
+        ) {
+
+            $project = [
+
+                /*
+                |--------------------------------------------------------------------------
+                | BX1 Identification
+                |--------------------------------------------------------------------------
+                */
+
+                'project_name' =>
+                    $request->input(
+                        'project_name',
+                        ''
+                    ),
+
+                'source_project_id' =>
+                    $request->input(
+                        'source_project_id',
+                        ''
+                    ),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | BX1 Classification
+                |--------------------------------------------------------------------------
+                */
+
+                'sector' =>
+                    $request->input(
+                        'sector',
+                        ''
+                    ),
+
+                'project_type' =>
+                    $request->input(
+                        'project_type',
+                        ''
+                    ),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | BX1 status → CMS project_stage
+                |--------------------------------------------------------------------------
+                */
+
+                'project_stage' =>
+                    $request->input(
+                        'project_stage',
+                        ''
+                    ),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | BX1 Location
+                |--------------------------------------------------------------------------
+                */
+
+                'city' =>
+                    $request->input(
+                        'city',
+                        ''
+                    ),
+
+                'state' =>
+                    $request->input(
+                        'state',
+                        ''
+                    ),
+
+                'region' =>
+                    $request->input(
+                        'region',
+                        ''
+                    ),
+
+                'location' =>
+                    $request->input(
+                        'location',
+                        ''
+                    ),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | CMS-specific Fields
+                |--------------------------------------------------------------------------
+                */
+
+                'summary' => '',
+
+                /*
+                | CMS publishing status.
+                |
+                | BX1 status does NOT go here.
+                | BX1 status is project_stage.
+                */
+
+                'status' => 'draft',
+
+                'published_at' => null,
+
+                'sort_order' => 0,
+
+                'is_featured' => false,
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | BX1 Import Flag
+                |--------------------------------------------------------------------------
+                */
+
+                '_source' => 'bx1',
+            ];
+        }
+
+
         return Inertia::render(
             'Cms/Projects/Form',
             [
-                'project' => null,
+                'project' => $project,
             ]
         );
     }
 
 
-    public function store(Request $request)
-    {
-        $data = $this->validateProject(
-            $request
+    /*
+    |--------------------------------------------------------------------------
+    | Store
+    |--------------------------------------------------------------------------
+    */
+
+    public function store(
+        Request $request
+    ) {
+
+        $data =
+            $this->validateProject(
+                $request
+            );
+
+
+        WebsiteProject::create(
+            $data
         );
 
-        WebsiteProject::create($data);
 
         return redirect()
-            ->route('cms.projects.index')
+            ->route(
+                'cms.projects.index'
+            )
             ->with(
                 'success',
                 'Project created successfully.'
             );
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Edit
+    |--------------------------------------------------------------------------
+    */
 
     public function edit(
         WebsiteProject $project
@@ -102,19 +315,32 @@ class ProjectController extends Controller
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Update
+    |--------------------------------------------------------------------------
+    */
+
     public function update(
         Request $request,
         WebsiteProject $project
     ) {
 
-        $data = $this->validateProject(
-            $request
+        $data =
+            $this->validateProject(
+                $request
+            );
+
+
+        $project->update(
+            $data
         );
 
-        $project->update($data);
 
         return redirect()
-            ->route('cms.projects.index')
+            ->route(
+                'cms.projects.index'
+            )
             ->with(
                 'success',
                 'Project updated successfully.'
@@ -122,14 +348,23 @@ class ProjectController extends Controller
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Delete
+    |--------------------------------------------------------------------------
+    */
+
     public function destroy(
         WebsiteProject $project
     ) {
 
         $project->delete();
 
+
         return redirect()
-            ->route('cms.projects.index')
+            ->route(
+                'cms.projects.index'
+            )
             ->with(
                 'success',
                 'Project deleted successfully.'
@@ -137,55 +372,81 @@ class ProjectController extends Controller
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Validation
+    |--------------------------------------------------------------------------
+    */
+
     private function validateProject(
         Request $request
     ): array {
 
-        $data = $request->validate([
+        $data =
+            $request->validate([
 
-            'project_name' =>
-                'required|string|max:255',
+                'project_name' =>
+                    'required|string|max:255',
 
-            'source_project_id' =>
-                'nullable|integer',
+                'source_project_id' =>
+                    'nullable|integer',
 
-            'sector' =>
-                'nullable|string|max:255',
+                'sector' =>
+                    'nullable|string|max:255',
 
-            'project_type' =>
-                'nullable|string|max:255',
+                'project_type' =>
+                    'nullable|string|max:255',
 
-            'project_stage' =>
-                'nullable|string|max:255',
+                'project_stage' =>
+                    'nullable|string|max:255',
 
-            'city' =>
-                'nullable|string|max:255',
+                'city' =>
+                    'nullable|string|max:255',
 
-            'state' =>
-                'nullable|string|max:255',
+                'state' =>
+                    'nullable|string|max:255',
 
-            'location' =>
-                'nullable|string|max:255',
+                'region' =>
+                    'nullable|string|max:255',
 
-            'summary' =>
-                'nullable|string',
+                'location' =>
+                    'nullable|string|max:255',
 
-            'status' =>
-                'required|in:draft,published',
+                'summary' =>
+                    'nullable|string',
 
-            'published_at' =>
-                'nullable|date',
+                /*
+                |--------------------------------------------------------------------------
+                | CMS Publication Status
+                |--------------------------------------------------------------------------
+                */
 
-            'sort_order' =>
-                'nullable|integer|min:0',
+                'status' =>
+                    'required|in:draft,published',
 
-            'is_featured' =>
-                'nullable|boolean',
-        ]);
+                'published_at' =>
+                    'nullable|date',
 
+                'sort_order' =>
+                    'nullable|integer|min:0',
+
+                'is_featured' =>
+                    'nullable|boolean',
+            ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Normalize Values
+        |--------------------------------------------------------------------------
+        */
 
         $data['sort_order'] =
-            (int) ($data['sort_order'] ?? 0);
+            (int) (
+                $data['sort_order']
+                ?? 0
+            );
+
 
         $data['is_featured'] =
             $request->boolean(
@@ -195,16 +456,22 @@ class ProjectController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Automatically set published date
+        | Automatically Set Published Date
         |--------------------------------------------------------------------------
         */
 
         if (
-            $data['status'] === 'published'
+            $data['status']
+                ===
+                'published'
             &&
-            empty($data['published_at'])
+            empty(
+                $data['published_at']
+            )
         ) {
-            $data['published_at'] = now();
+
+            $data['published_at'] =
+                now();
         }
 
 

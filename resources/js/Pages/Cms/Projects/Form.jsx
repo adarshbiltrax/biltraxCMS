@@ -309,7 +309,12 @@ export default function Form({
     project = null,
 }) {
 
-    const isEdit = Boolean(project);
+  const isBx1Import =
+    project?._source === 'bx1';
+
+const isEdit =
+    Boolean(project) &&
+    !isBx1Import;
 
 
     /*
@@ -334,58 +339,61 @@ export default function Form({
     |--------------------------------------------------------------------------
     */
 
-    const {
-        data,
-        setData,
-        post,
-        put,
-        processing,
-        errors,
-    } = useForm({
+const {
+    data,
+    setData,
+    post,
+    put,
+    processing,
+    errors,
+} = useForm({
 
-        project_name:
-            project?.project_name ?? '',
+    project_name:
+        project?.project_name ?? '',
 
-        source_project_id:
-            project?.source_project_id ?? '',
+    source_project_id:
+        project?.source_project_id ?? '',
 
-        sector:
-            project?.sector ?? '',
+    sector:
+        project?.sector ?? '',
 
-        project_type:
-            project?.project_type ?? '',
+    project_type:
+        project?.project_type ?? '',
 
-        project_stage:
-            project?.project_stage ?? '',
+    project_stage:
+        project?.project_stage ?? '',
 
-        city:
-            project?.city ?? '',
+    city:
+        project?.city ?? '',
 
-        state:
-            project?.state ?? '',
+    state:
+        project?.state ?? '',
 
-        location:
-            project?.location ?? '',
+    region:
+        project?.region ?? '',
 
-        summary:
-            project?.summary ?? '',
+    location:
+        project?.location ?? '',
 
-        status:
-            project?.status ?? 'draft',
+    summary:
+        project?.summary ?? '',
 
-        published_at:
-            formatDateTime(
-                project?.published_at
-            ),
+    status:
+        project?.status ?? 'draft',
 
-        sort_order:
-            project?.sort_order ?? 0,
+    published_at:
+        formatDateTime(
+            project?.published_at
+        ),
 
-        is_featured:
-            Boolean(
-                project?.is_featured
-            ),
-    });
+    sort_order:
+        project?.sort_order ?? 0,
+
+    is_featured:
+        Boolean(
+            project?.is_featured
+        ),
+});
 
 
     /*
@@ -1084,35 +1092,40 @@ export default function Form({
                                 </div>
 
                                 <div>
+<div className="project-form-intro-title">
 
-                                    <div className="project-form-intro-title">
+    {isEdit
+        ? 'Update Project Details'
+        : isBx1Import
+            ? 'Import BX1 Project'
+            : 'Create New Project'}
 
-                                        {isEdit
-                                            ? 'Update Project Details'
-                                            : 'Create New Project'}
+</div>
 
-                                    </div>
+                              <div className="project-form-intro-description">
 
-                                    <div className="project-form-intro-description">
+    {isEdit
+        ? 'Update the project information displayed on the Biltrax website.'
+        : isBx1Import
+            ? 'Review the BX1 project information and configure how this project will appear on the Biltrax website.'
+            : 'Add a new project to the Biltrax website project directory.'}
 
-                                        {isEdit
-                                            ? 'Update the project information displayed on the Biltrax website.'
-                                            : 'Add a new project to the Biltrax website project directory.'}
-
-                                    </div>
+</div>
 
                                 </div>
 
                             </div>
 
 
-                            <div className="project-form-mode">
+                        <div className="project-form-mode">
 
-                                {isEdit
-                                    ? 'Editing Project'
-                                    : 'New Project'}
+    {isEdit
+        ? 'Editing Project'
+        : isBx1Import
+            ? 'BX1 Import'
+            : 'New Project'}
 
-                            </div>
+</div>
 
                         </div>
 
@@ -1542,11 +1555,13 @@ export default function Form({
 
                                     <span>
 
-                                        {processing
-                                            ? 'Saving...'
-                                            : isEdit
-                                                ? 'Update Project'
-                                                : 'Save Project'}
+                               {processing
+    ? 'Saving...'
+    : isEdit
+        ? 'Update Project'
+        : isBx1Import
+            ? 'Import & Save Project'
+            : 'Save Project'}
 
                                     </span>
 

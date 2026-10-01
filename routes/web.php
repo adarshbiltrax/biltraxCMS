@@ -15,6 +15,8 @@ use App\Http\Controllers\OpportunityEnquiryController as PublicOpportunityEnquir
 
 use App\Http\Controllers\Cms\OpportunityEnquiryController as CmsOpportunityEnquiryController;
 
+use App\Http\Controllers\Cms\Bx1ProjectController;
+
 /*
 |--------------------------------------------------------------------------
 | Public Website
@@ -265,6 +267,30 @@ Route::patch(
 )->name(
     'opportunity-enquiries.update'
 );
+
+
+/*
+|--------------------------------------------------------------------------
+| BX1 Project Browser
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/bx1/projects',
+    [
+        Bx1ProjectController::class,
+        'index',
+    ]
+)->name('bx1.projects.index');
+
+
+Route::post(
+    '/bx1/projects/search',
+    [
+        Bx1ProjectController::class,
+        'search',
+    ]
+)->name('bx1.projects.search');
 
 
     });
