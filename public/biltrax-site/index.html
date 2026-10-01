@@ -3,6 +3,44 @@
 <script>if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Prevent the first fallback-font/runtime paint from flashing at a different size. -->
+<style id="biltrax-initial-paint-guard">
+  html.biltrax-preparing body { visibility: hidden; }
+</style>
+<script>
+(function () {
+  var root = document.documentElement;
+  root.classList.add('biltrax-preparing');
+
+  var released = false;
+  function releaseInitialPaint() {
+    if (released) return;
+    released = true;
+    root.classList.remove('biltrax-preparing');
+  }
+
+  function waitForStablePaint() {
+    var fontsReady = document.fonts && document.fonts.ready
+      ? document.fonts.ready.catch(function () {})
+      : Promise.resolve();
+
+    fontsReady.then(function () {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(releaseInitialPaint);
+      });
+    });
+  }
+
+  if (document.readyState === 'complete') {
+    waitForStablePaint();
+  } else {
+    window.addEventListener('load', waitForStablePaint, { once: true });
+  }
+
+  /* Safety fallback: never leave the page hidden if an asset is unusually slow. */
+  window.setTimeout(releaseInitialPaint, 4000);
+})();
+</script>
 <script src="/biltrax-site/assets/088e76f6-3dad-4a90-a5b1-a7be195d64f3.js"></script>
 
 
