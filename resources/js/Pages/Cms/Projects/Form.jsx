@@ -113,7 +113,13 @@ function BuildingIcon() {
             strokeLinecap="round"
             strokeLinejoin="round"
         >
-            <rect x="4" y="2" width="16" height="20" rx="2" />
+            <rect
+                x="4"
+                y="2"
+                width="16"
+                height="20"
+                rx="2"
+            />
             <path d="M9 22v-4h6v4" />
             <path d="M8 6h.01" />
             <path d="M12 6h.01" />
@@ -164,33 +170,6 @@ function SettingsIcon() {
 }
 
 
-function CalendarIcon() {
-    return (
-        <svg
-            width="17"
-            height="17"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <rect
-                x="3"
-                y="5"
-                width="18"
-                height="16"
-                rx="2"
-            />
-            <path d="M16 3v4" />
-            <path d="M8 3v4" />
-            <path d="M3 11h18" />
-        </svg>
-    );
-}
-
-
 function StarIcon() {
     return (
         <svg
@@ -222,17 +201,13 @@ function Field({
     full = false,
     children,
 }) {
-
     return (
-
         <div
             className={
                 `project-form-field ${full ? 'full' : ''}`
             }
         >
-
             <label className="project-form-label">
-
                 {label}
 
                 {required && (
@@ -240,19 +215,15 @@ function Field({
                         *
                     </span>
                 )}
-
             </label>
 
             {children}
 
             {error && (
-
                 <div className="project-form-error">
                     {error}
                 </div>
-
             )}
-
         </div>
     );
 }
@@ -269,31 +240,23 @@ function SectionTitle({
     title,
     description,
 }) {
-
     return (
-
         <div className="project-section-title">
-
             <div className="project-section-icon">
                 {icon}
             </div>
 
             <div>
-
                 <div className="project-section-name">
                     {title}
                 </div>
 
                 {description && (
-
                     <div className="project-section-description">
                         {description}
                     </div>
-
                 )}
-
             </div>
-
         </div>
     );
 }
@@ -308,13 +271,43 @@ function SectionTitle({
 export default function Form({
     project = null,
 }) {
+    /*
+    |--------------------------------------------------------------------------
+    | Detect API Import
+    |--------------------------------------------------------------------------
+    |
+    | project._source = bx1 -> BX1 import
+    | project._source = bx2 -> BX2 import
+    | no _source + project.id -> existing CMS project
+    |
+    */
 
-  const isBx1Import =
-    project?._source === 'bx1';
+    const importSource =
+        ['bx1', 'bx2'].includes(project?._source)
+            ? project._source
+            : null;
 
-const isEdit =
-    Boolean(project) &&
-    !isBx1Import;
+    const isApiImport =
+        Boolean(importSource);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Existing CMS Project
+    |--------------------------------------------------------------------------
+    |
+    | An API-imported project is NOT an edit even though project contains
+    | pre-filled values.
+    |
+    */
+
+    const isEdit =
+        Boolean(project?.id) &&
+        !isApiImport;
+
+    const importSourceLabel =
+        importSource
+            ? importSource.toUpperCase()
+            : '';
 
 
     /*
@@ -324,7 +317,6 @@ const isEdit =
     */
 
     const formatDateTime = (value) => {
-
         if (!value) {
             return '';
         }
@@ -339,61 +331,60 @@ const isEdit =
     |--------------------------------------------------------------------------
     */
 
-const {
-    data,
-    setData,
-    post,
-    put,
-    processing,
-    errors,
-} = useForm({
+    const {
+        data,
+        setData,
+        post,
+        put,
+        processing,
+        errors,
+    } = useForm({
+        project_name:
+            project?.project_name ?? '',
 
-    project_name:
-        project?.project_name ?? '',
+        source_project_id:
+            project?.source_project_id ?? '',
 
-    source_project_id:
-        project?.source_project_id ?? '',
+        sector:
+            project?.sector ?? '',
 
-    sector:
-        project?.sector ?? '',
+        project_type:
+            project?.project_type ?? '',
 
-    project_type:
-        project?.project_type ?? '',
+        project_stage:
+            project?.project_stage ?? '',
 
-    project_stage:
-        project?.project_stage ?? '',
+        city:
+            project?.city ?? '',
 
-    city:
-        project?.city ?? '',
+        state:
+            project?.state ?? '',
 
-    state:
-        project?.state ?? '',
+        region:
+            project?.region ?? '',
 
-    region:
-        project?.region ?? '',
+        location:
+            project?.location ?? '',
 
-    location:
-        project?.location ?? '',
+        summary:
+            project?.summary ?? '',
 
-    summary:
-        project?.summary ?? '',
+        status:
+            project?.status ?? 'draft',
 
-    status:
-        project?.status ?? 'draft',
+        published_at:
+            formatDateTime(
+                project?.published_at
+            ),
 
-    published_at:
-        formatDateTime(
-            project?.published_at
-        ),
+        sort_order:
+            project?.sort_order ?? 0,
 
-    sort_order:
-        project?.sort_order ?? 0,
-
-    is_featured:
-        Boolean(
-            project?.is_featured
-        ),
-});
+        is_featured:
+            Boolean(
+                project?.is_featured
+            ),
+    });
 
 
     /*
@@ -403,11 +394,15 @@ const {
     */
 
     function submit(e) {
-
         e.preventDefault();
 
-        if (isEdit) {
+        /*
+        |--------------------------------------------------------------------------
+        | Existing CMS project -> UPDATE
+        |--------------------------------------------------------------------------
+        */
 
+        if (isEdit) {
             put(
                 `/cms/projects/${project.id}`,
                 {
@@ -415,58 +410,50 @@ const {
                 }
             );
 
-        } else {
-
-            post(
-                '/cms/projects',
-                {
-                    preserveScroll: true,
-                }
-            );
+            return;
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | New Project / BX1 Import / BX2 Import -> CREATE
+        |--------------------------------------------------------------------------
+        */
+
+        post(
+            '/cms/projects',
+            {
+                preserveScroll: true,
+            }
+        );
     }
 
 
     return (
-
         <CmsLayout
-            title={
-                isEdit
-                    ? ''
-                    : ''
-            }
+            title=""
             action={
-
                 <Link
                     href="/cms/projects"
                     className="project-back-button"
                 >
-
                     <ArrowLeftIcon />
 
                     <span>
                         Back to Projects
                     </span>
-
                 </Link>
-
             }
         >
-
             <Head
                 title={
                     isEdit
                         ? 'Edit Project · Biltrax CMS'
-                        : 'Add Project · Biltrax CMS'
+                        : isApiImport
+                            ? `Import ${importSourceLabel} Project · Biltrax CMS`
+                            : 'Add Project · Biltrax CMS'
                 }
             />
 
-
-            {/*
-            |--------------------------------------------------------------------------
-            | PAGE STYLES
-            |--------------------------------------------------------------------------
-            */}
 
             <style>{`
 
@@ -476,11 +463,6 @@ const {
                     animation:
                         projectFormEnter .42s ease both;
                 }
-
-
-                /* ---------------------------------------------------------
-                   BACK BUTTON
-                --------------------------------------------------------- */
 
                 .project-back-button {
                     height: 40px;
@@ -513,11 +495,6 @@ const {
                         0 4px 12px rgba(16,24,40,.06);
                 }
 
-
-                /* ---------------------------------------------------------
-                   FORM CARD
-                --------------------------------------------------------- */
-
                 .project-form-card {
                     overflow: hidden;
                     background: #ffffff;
@@ -527,11 +504,6 @@ const {
                         0 1px 2px rgba(16,24,40,.02),
                         0 8px 30px rgba(16,24,40,.035);
                 }
-
-
-                /* ---------------------------------------------------------
-                   INTRO
-                --------------------------------------------------------- */
 
                 .project-form-intro {
                     padding: 22px 26px;
@@ -600,11 +572,6 @@ const {
                     background: #c0122f;
                 }
 
-
-                /* ---------------------------------------------------------
-                   SECTION
-                --------------------------------------------------------- */
-
                 .project-form-section {
                     padding: 25px 26px 28px;
                     border-bottom: 1px solid #eceef2;
@@ -645,11 +612,6 @@ const {
                     font-size: 11.5px;
                 }
 
-
-                /* ---------------------------------------------------------
-                   GRID
-                --------------------------------------------------------- */
-
                 .project-form-grid {
                     display: grid;
                     grid-template-columns:
@@ -666,11 +628,6 @@ const {
                     grid-column: 1 / -1;
                 }
 
-
-                /* ---------------------------------------------------------
-                   LABEL
-                --------------------------------------------------------- */
-
                 .project-form-label {
                     display: block;
                     margin: 0 0 7px;
@@ -684,11 +641,6 @@ const {
                     margin-left: 3px;
                     color: #c0122f;
                 }
-
-
-                /* ---------------------------------------------------------
-                   INPUTS
-                --------------------------------------------------------- */
 
                 .project-form-control {
                     display: block;
@@ -706,8 +658,7 @@ const {
                     transition:
                         border-color .18s ease,
                         box-shadow .18s ease,
-                        background .18s ease,
-                        transform .18s ease;
+                        background .18s ease;
                 }
 
                 .project-form-control:hover {
@@ -738,24 +689,12 @@ const {
                     cursor: pointer;
                 }
 
-
-                /* ---------------------------------------------------------
-                   ERROR
-                --------------------------------------------------------- */
-
                 .project-form-error {
                     margin-top: 6px;
                     color: #c0122f;
                     font-size: 11.5px;
                     font-weight: 500;
-                    animation:
-                        errorEnter .2s ease both;
                 }
-
-
-                /* ---------------------------------------------------------
-                   FEATURED SWITCH
-                --------------------------------------------------------- */
 
                 .project-featured-box {
                     min-height: 67px;
@@ -768,14 +707,6 @@ const {
                     border: 1px solid #e2e5e9;
                     border-radius: 10px;
                     background: #fafbfc;
-                    transition:
-                        border-color .18s ease,
-                        background .18s ease;
-                }
-
-                .project-featured-box:hover {
-                    background: #ffffff;
-                    border-color: #d2d7de;
                 }
 
                 .project-featured-info {
@@ -828,8 +759,7 @@ const {
                     inset: 0;
                     border-radius: 20px;
                     background: #d8dde5;
-                    transition:
-                        background .22s ease;
+                    transition: background .22s ease;
                 }
 
                 .project-switch-slider::before {
@@ -857,11 +787,6 @@ const {
                     transform: translateX(19px);
                 }
 
-
-                /* ---------------------------------------------------------
-                   STATUS HINT
-                --------------------------------------------------------- */
-
                 .project-info-box {
                     margin-top: 18px;
                     padding: 11px 13px;
@@ -881,11 +806,6 @@ const {
                     margin-top: 1px;
                     color: #7b8492;
                 }
-
-
-                /* ---------------------------------------------------------
-                   FOOTER
-                --------------------------------------------------------- */
 
                 .project-form-footer {
                     padding: 18px 26px;
@@ -922,25 +842,12 @@ const {
                     font-weight: 650;
                     text-decoration: none;
                     cursor: pointer;
-                    transition:
-                        color .18s ease,
-                        background .18s ease,
-                        border-color .18s ease,
-                        transform .18s ease,
-                        box-shadow .18s ease;
                 }
 
                 .project-cancel-button {
                     border: 1px solid #dfe3e8;
                     background: #ffffff;
                     color: #475467 !important;
-                }
-
-                .project-cancel-button:hover {
-                    background: #f4f5f7;
-                    border-color: #d2d6dc;
-                    color: #202631 !important;
-                    transform: translateY(-1px);
                 }
 
                 .project-save-button {
@@ -954,33 +861,12 @@ const {
                 .project-save-button:hover:not(:disabled) {
                     border-color: #a90f29;
                     background: #a90f29;
-                    transform: translateY(-1px);
-                    box-shadow:
-                        0 7px 17px rgba(192,18,47,.22);
-                }
-
-                .project-save-button:active:not(:disabled) {
-                    transform: translateY(0);
                 }
 
                 .project-save-button:disabled {
                     opacity: .6;
                     cursor: wait;
                 }
-
-                .project-save-button svg {
-                    transition:
-                        transform .18s ease;
-                }
-
-                .project-save-button:hover:not(:disabled) svg {
-                    transform: scale(1.08);
-                }
-
-
-                /* ---------------------------------------------------------
-                   ANIMATION
-                --------------------------------------------------------- */
 
                 @keyframes projectFormEnter {
                     from {
@@ -994,25 +880,7 @@ const {
                     }
                 }
 
-                @keyframes errorEnter {
-                    from {
-                        opacity: 0;
-                        transform: translateY(-2px);
-                    }
-
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-
-
-                /* ---------------------------------------------------------
-                   RESPONSIVE
-                --------------------------------------------------------- */
-
                 @media (max-width: 900px) {
-
                     .project-form-grid {
                         grid-template-columns: 1fr;
                     }
@@ -1028,10 +896,8 @@ const {
                 }
 
                 @media (max-width: 600px) {
-
                     .project-form-section {
-                        padding:
-                            21px 17px 23px;
+                        padding: 21px 17px 23px;
                     }
 
                     .project-form-intro {
@@ -1042,10 +908,6 @@ const {
                         padding: 16px 17px;
                         align-items: stretch;
                         flex-direction: column;
-                    }
-
-                    .project-form-footer-note {
-                        order: 2;
                     }
 
                     .project-form-actions {
@@ -1076,12 +938,7 @@ const {
 
                     <div className="project-form-card">
 
-
-                        {/*
-                        |--------------------------------------------------------------------------
-                        | HEADER
-                        |--------------------------------------------------------------------------
-                        */}
+                        {/* HEADER */}
 
                         <div className="project-form-intro">
 
@@ -1092,49 +949,46 @@ const {
                                 </div>
 
                                 <div>
-<div className="project-form-intro-title">
 
-    {isEdit
-        ? 'Update Project Details'
-        : isBx1Import
-            ? 'Import BX1 Project'
-            : 'Create New Project'}
+                                    <div className="project-form-intro-title">
 
-</div>
+                                        {isEdit
+                                            ? 'Update Project Details'
+                                            : isApiImport
+                                                ? `Import ${importSourceLabel} Project`
+                                                : 'Create New Project'}
 
-                              <div className="project-form-intro-description">
+                                    </div>
 
-    {isEdit
-        ? 'Update the project information displayed on the Biltrax website.'
-        : isBx1Import
-            ? 'Review the BX1 project information and configure how this project will appear on the Biltrax website.'
-            : 'Add a new project to the Biltrax website project directory.'}
+                                    <div className="project-form-intro-description">
 
-</div>
+                                        {isEdit
+                                            ? 'Update the project information displayed on the Biltrax website.'
+                                            : isApiImport
+                                                ? `Review the ${importSourceLabel} project information and configure how this project will appear on the Biltrax website.`
+                                                : 'Add a new project to the Biltrax website project directory.'}
+
+                                    </div>
 
                                 </div>
 
                             </div>
 
 
-                        <div className="project-form-mode">
+                            <div className="project-form-mode">
 
-    {isEdit
-        ? 'Editing Project'
-        : isBx1Import
-            ? 'BX1 Import'
-            : 'New Project'}
+                                {isEdit
+                                    ? 'Editing Project'
+                                    : isApiImport
+                                        ? `${importSourceLabel} Import`
+                                        : 'New Project'}
 
-</div>
+                            </div>
 
                         </div>
 
 
-                        {/*
-                        |--------------------------------------------------------------------------
-                        | BASIC INFORMATION
-                        |--------------------------------------------------------------------------
-                        */}
+                        {/* PROJECT INFORMATION */}
 
                         <section className="project-form-section">
 
@@ -1144,16 +998,13 @@ const {
                                 description="Basic project identification and classification"
                             />
 
-
                             <div className="project-form-grid">
-
 
                                 <Field
                                     label="Project Name"
                                     required
                                     error={errors.project_name}
                                 >
-
                                     <input
                                         type="text"
                                         className="project-form-control"
@@ -1166,14 +1017,13 @@ const {
                                         }
                                         placeholder="Enter project name"
                                     />
-
                                 </Field>
 
 
                                 <Field
                                     label="Biltrax / Source Project ID"
+                                    error={errors.source_project_id}
                                 >
-
                                     <input
                                         type="number"
                                         className="project-form-control"
@@ -1186,12 +1036,13 @@ const {
                                         }
                                         placeholder="Enter source project ID"
                                     />
-
                                 </Field>
 
 
-                                <Field label="Sector">
-
+                                <Field
+                                    label="Sector"
+                                    error={errors.sector}
+                                >
                                     <input
                                         type="text"
                                         className="project-form-control"
@@ -1202,14 +1053,15 @@ const {
                                                 e.target.value
                                             )
                                         }
-                                        placeholder="e.g. Residential, Commercial"
+                                        placeholder="Enter sector"
                                     />
-
                                 </Field>
 
 
-                                <Field label="Project Type">
-
+                                <Field
+                                    label="Project Type"
+                                    error={errors.project_type}
+                                >
                                     <input
                                         type="text"
                                         className="project-form-control"
@@ -1222,12 +1074,13 @@ const {
                                         }
                                         placeholder="Enter project type"
                                     />
-
                                 </Field>
 
 
-                                <Field label="Project Stage">
-
+                                <Field
+                                    label="Project Stage"
+                                    error={errors.project_stage}
+                                >
                                     <input
                                         type="text"
                                         className="project-form-control"
@@ -1240,7 +1093,6 @@ const {
                                         }
                                         placeholder="e.g. Under Construction"
                                     />
-
                                 </Field>
 
                             </div>
@@ -1248,11 +1100,7 @@ const {
                         </section>
 
 
-                        {/*
-                        |--------------------------------------------------------------------------
-                        | LOCATION
-                        |--------------------------------------------------------------------------
-                        */}
+                        {/* LOCATION */}
 
                         <section className="project-form-section">
 
@@ -1262,12 +1110,12 @@ const {
                                 description="Project geographical information"
                             />
 
-
                             <div className="project-form-grid">
 
-
-                                <Field label="City">
-
+                                <Field
+                                    label="City"
+                                    error={errors.city}
+                                >
                                     <input
                                         type="text"
                                         className="project-form-control"
@@ -1280,12 +1128,13 @@ const {
                                         }
                                         placeholder="Enter city"
                                     />
-
                                 </Field>
 
 
-                                <Field label="State">
-
+                                <Field
+                                    label="State"
+                                    error={errors.state}
+                                >
                                     <input
                                         type="text"
                                         className="project-form-control"
@@ -1298,15 +1147,32 @@ const {
                                         }
                                         placeholder="Enter state"
                                     />
+                                </Field>
 
+
+                                <Field
+                                    label="Region"
+                                    error={errors.region}
+                                >
+                                    <input
+                                        type="text"
+                                        className="project-form-control"
+                                        value={data.region}
+                                        onChange={(e) =>
+                                            setData(
+                                                'region',
+                                                e.target.value
+                                            )
+                                        }
+                                        placeholder="Enter region"
+                                    />
                                 </Field>
 
 
                                 <Field
                                     label="Location"
-                                    full
+                                    error={errors.location}
                                 >
-
                                     <input
                                         type="text"
                                         className="project-form-control"
@@ -1319,7 +1185,6 @@ const {
                                         }
                                         placeholder="Enter display location"
                                     />
-
                                 </Field>
 
                             </div>
@@ -1327,11 +1192,7 @@ const {
                         </section>
 
 
-                        {/*
-                        |--------------------------------------------------------------------------
-                        | PROJECT DESCRIPTION
-                        |--------------------------------------------------------------------------
-                        */}
+                        {/* DESCRIPTION */}
 
                         <section className="project-form-section">
 
@@ -1341,14 +1202,13 @@ const {
                                 description="Content displayed with the project"
                             />
 
-
                             <div className="project-form-grid">
 
                                 <Field
                                     label="Summary"
+                                    error={errors.summary}
                                     full
                                 >
-
                                     <textarea
                                         className="project-form-control"
                                         rows="5"
@@ -1361,7 +1221,6 @@ const {
                                         }
                                         placeholder="Enter a short project summary..."
                                     />
-
                                 </Field>
 
                             </div>
@@ -1369,11 +1228,7 @@ const {
                         </section>
 
 
-                        {/*
-                        |--------------------------------------------------------------------------
-                        | PUBLISHING
-                        |--------------------------------------------------------------------------
-                        */}
+                        {/* PUBLISHING */}
 
                         <section className="project-form-section">
 
@@ -1383,16 +1238,13 @@ const {
                                 description="Control project visibility and display order"
                             />
 
-
                             <div className="project-form-grid">
-
 
                                 <Field
                                     label="Status"
                                     required
                                     error={errors.status}
                                 >
-
                                     <select
                                         className="project-form-control"
                                         value={data.status}
@@ -1403,7 +1255,6 @@ const {
                                             )
                                         }
                                     >
-
                                         <option value="draft">
                                             Draft
                                         </option>
@@ -1411,14 +1262,14 @@ const {
                                         <option value="published">
                                             Published
                                         </option>
-
                                     </select>
-
                                 </Field>
 
 
-                                <Field label="Published At">
-
+                                <Field
+                                    label="Published At"
+                                    error={errors.published_at}
+                                >
                                     <input
                                         type="datetime-local"
                                         className="project-form-control"
@@ -1430,12 +1281,13 @@ const {
                                             )
                                         }
                                     />
-
                                 </Field>
 
 
-                                <Field label="Sort Order">
-
+                                <Field
+                                    label="Sort Order"
+                                    error={errors.sort_order}
+                                >
                                     <input
                                         type="number"
                                         min="0"
@@ -1449,12 +1301,13 @@ const {
                                         }
                                         placeholder="0"
                                     />
-
                                 </Field>
 
 
-                                <Field label="Featured">
-
+                                <Field
+                                    label="Featured"
+                                    error={errors.is_featured}
+                                >
                                     <div className="project-featured-box">
 
                                         <div className="project-featured-info">
@@ -1464,7 +1317,6 @@ const {
                                             </div>
 
                                             <div>
-
                                                 <div className="project-featured-title">
                                                     Featured Project
                                                 </div>
@@ -1472,7 +1324,6 @@ const {
                                                 <div className="project-featured-description">
                                                     Highlight this project on the website
                                                 </div>
-
                                             </div>
 
                                         </div>
@@ -1482,9 +1333,7 @@ const {
 
                                             <input
                                                 type="checkbox"
-                                                checked={
-                                                    data.is_featured
-                                                }
+                                                checked={data.is_featured}
                                                 onChange={(e) =>
                                                     setData(
                                                         'is_featured',
@@ -1509,7 +1358,9 @@ const {
                                 <InfoIcon />
 
                                 <span>
-                                    Only projects with status <strong>Published</strong> are available to the public website through the CMS API.
+                                    Only projects with status{' '}
+                                    <strong>Published</strong>{' '}
+                                    are available to the public website through the CMS API.
                                 </span>
 
                             </div>
@@ -1517,11 +1368,7 @@ const {
                         </section>
 
 
-                        {/*
-                        |--------------------------------------------------------------------------
-                        | FOOTER ACTIONS
-                        |--------------------------------------------------------------------------
-                        */}
+                        {/* FOOTER */}
 
                         <div className="project-form-footer">
 
@@ -1529,13 +1376,14 @@ const {
 
                                 {isEdit
                                     ? `Editing project #${project?.id}`
-                                    : 'Create a new website project'}
+                                    : isApiImport
+                                        ? `Importing ${importSourceLabel} project #${project?.source_project_id ?? ''}`
+                                        : 'Create a new website project'}
 
                             </div>
 
 
                             <div className="project-form-actions">
-
 
                                 <Link
                                     href="/cms/projects"
@@ -1550,28 +1398,23 @@ const {
                                     className="project-save-button"
                                     disabled={processing}
                                 >
-
                                     <SaveIcon />
 
                                     <span>
-
-                               {processing
-    ? 'Saving...'
-    : isEdit
-        ? 'Update Project'
-        : isBx1Import
-            ? 'Import & Save Project'
-            : 'Save Project'}
-
+                                        {processing
+                                            ? 'Saving...'
+                                            : isEdit
+                                                ? 'Update Project'
+                                                : isApiImport
+                                                    ? 'Import & Save Project'
+                                                    : 'Save Project'}
                                     </span>
 
                                 </button>
 
-
                             </div>
 
                         </div>
-
 
                     </div>
 

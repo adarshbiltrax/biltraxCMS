@@ -16,6 +16,23 @@ import CmsLayout from '../../../Layouts/CmsLayout';
 
 /*
 |--------------------------------------------------------------------------
+| Day Options
+|--------------------------------------------------------------------------
+*/
+
+const DAY_OPTIONS = [
+    7,
+    15,
+    30,
+    45,
+    60,
+    90,
+    120,
+];
+
+
+/*
+|--------------------------------------------------------------------------
 | Icons
 |--------------------------------------------------------------------------
 */
@@ -29,8 +46,6 @@ function ArrowLeftIcon() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
         >
             <path d="M19 12H5" />
             <path d="m12 19-7-7 7-7" />
@@ -48,76 +63,14 @@ function SearchIcon() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
         >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
-        </svg>
-    );
-}
-
-
-function ProjectIcon() {
-    return (
-        <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <rect
-                x="3"
-                y="3"
-                width="18"
-                height="18"
-                rx="2"
+            <circle
+                cx="11"
+                cy="11"
+                r="8"
             />
-            <path d="M8 8h8" />
-            <path d="M8 12h8" />
-            <path d="M8 16h5" />
-        </svg>
-    );
-}
 
-
-function LocationIcon() {
-    return (
-        <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
-            <circle cx="12" cy="10" r="2.5" />
-        </svg>
-    );
-}
-
-
-function ArrowRightIcon() {
-    return (
-        <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M5 12h14" />
-            <path d="m13 6 6 6-6 6" />
+            <path d="m21 21-4.35-4.35" />
         </svg>
     );
 }
@@ -132,11 +85,34 @@ function RefreshIcon() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
         >
             <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5" />
+
             <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5" />
+        </svg>
+    );
+}
+
+
+function ProjectIcon() {
+    return (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+        >
+            <rect
+                x="3"
+                y="3"
+                width="18"
+                height="18"
+                rx="2"
+            />
+
+            <path d="M8 8h8M8 12h8M8 16h5" />
         </svg>
     );
 }
@@ -144,28 +120,83 @@ function RefreshIcon() {
 
 /*
 |--------------------------------------------------------------------------
-| Page
+| Component
 |--------------------------------------------------------------------------
 */
 
-export default function Bx1Projects() {
+export default function Bx1Projects({
+    defaultSource = 'bx1',
+    defaultDays = 120,
+    dayOptions = DAY_OPTIONS,
+}) {
 
-    const [projects, setProjects] = useState([]);
+    /*
+    |--------------------------------------------------------------------------
+    | State
+    |--------------------------------------------------------------------------
+    */
 
-    const [meta, setMeta] = useState({
+    const [
+        projects,
+        setProjects,
+    ] = useState([]);
+
+
+    const [
+        meta,
+        setMeta,
+    ] = useState({
         current_page: 1,
         last_page: 1,
-        per_page: 25,
+        per_page: 50,
         total: 0,
     });
 
-    const [query, setQuery] = useState('');
 
-    const [loading, setLoading] = useState(true);
+    const [
+        query,
+        setQuery,
+    ] = useState('');
 
-    const [error, setError] = useState('');
 
-    const [selectedId, setSelectedId] = useState(null);
+    const [
+        source,
+        setSource,
+    ] = useState(
+        defaultSource
+    );
+
+
+    const [
+        days,
+        setDays,
+    ] = useState(
+        defaultDays
+    );
+
+
+    const [
+        dateRange,
+        setDateRange,
+    ] = useState(null);
+
+
+    const [
+        loading,
+        setLoading,
+    ] = useState(true);
+
+
+    const [
+        error,
+        setError,
+    ] = useState('');
+
+
+    const [
+        selectedId,
+        setSelectedId,
+    ] = useState(null);
 
 
     /*
@@ -176,65 +207,105 @@ export default function Bx1Projects() {
 
     async function loadProjects(
         page = 1,
-        search = query
+        search = query,
+        selectedSource = source,
+        selectedDays = days
     ) {
 
         setLoading(true);
+
         setError('');
+
 
         try {
 
-            const response = await axios.post(
-                '/cms/bx1/projects/search',
-                {
-                    page,
-                    per_page: 25,
-                    q: search,
-                }
-            );
+            const response =
+                await axios.post(
+                    '/cms/bx1/projects/search',
+                    {
+                        page,
 
-            if (!response.data?.success) {
+                        per_page: 50,
+
+                        q: search,
+
+                        source:
+                            selectedSource,
+
+                        days:
+                            selectedDays,
+                    }
+                );
+
+
+            if (
+                !response.data?.success
+            ) {
 
                 throw new Error(
-                    response.data?.message ||
-                    'Unable to load BX1 projects.'
+                    response.data?.message
+                    ||
+                    'Unable to load projects.'
                 );
             }
 
+
             setProjects(
-                response.data.data || []
+                response.data.data
+                ||
+                []
             );
 
+
             setMeta({
+
                 current_page:
-                    response.data.meta?.current_page || page,
+                    response.data.meta?.current_page
+                    ||
+                    page,
 
                 last_page:
-                    response.data.meta?.last_page || 1,
+                    response.data.meta?.last_page
+                    ||
+                    1,
 
                 per_page:
-                    response.data.meta?.per_page || 25,
+                    response.data.meta?.per_page
+                    ||
+                    50,
 
                 total:
-                    response.data.meta?.total || 0,
+                    response.data.meta?.total
+                    ||
+                    0,
             });
+
+
+            setDateRange(
+                response.data.date_range
+                ||
+                null
+            );
 
         } catch (err) {
 
             console.error(err);
 
+
             setProjects([]);
 
+
             setError(
-                err?.response?.data?.message ||
-                err?.message ||
-                'Unable to connect to BX1.'
+                err?.response?.data?.message
+                ||
+                err?.message
+                ||
+                `Unable to connect to ${selectedSource.toUpperCase()}.`
             );
 
         } finally {
 
             setLoading(false);
-
         }
     }
 
@@ -245,11 +316,19 @@ export default function Bx1Projects() {
     |--------------------------------------------------------------------------
     */
 
-    useEffect(() => {
+    useEffect(
+        () => {
 
-        loadProjects(1, '');
+            loadProjects(
+                1,
+                '',
+                defaultSource,
+                defaultDays
+            );
 
-    }, []);
+        },
+        []
+    );
 
 
     /*
@@ -262,9 +341,58 @@ export default function Bx1Projects() {
 
         e.preventDefault();
 
+
         loadProjects(
             1,
-            query.trim()
+            query.trim(),
+            source,
+            days
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Change BX Source
+    |--------------------------------------------------------------------------
+    */
+
+    function changeSource(next) {
+
+        setSource(next);
+
+        setQuery('');
+
+        setSelectedId(null);
+
+
+        loadProjects(
+            1,
+            '',
+            next,
+            days
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Change Date Range
+    |--------------------------------------------------------------------------
+    */
+
+    function changeDays(next) {
+
+        setDays(next);
+
+        setSelectedId(null);
+
+
+        loadProjects(
+            1,
+            query.trim(),
+            source,
+            next
         );
     }
 
@@ -273,131 +401,317 @@ export default function Bx1Projects() {
     |--------------------------------------------------------------------------
     | Select Project
     |--------------------------------------------------------------------------
-    */
-
-function selectProject(project) {
-
-    setSelectedId(project.id);
-
-    /*
-    |--------------------------------------------------------------------------
-    | BX1 → CMS Mapping
-    |--------------------------------------------------------------------------
-    */
-
-    const projectName =
-        project.name ?? '';
-
-    const sourceProjectId =
-        project.id ?? '';
-
-    const sector =
-        project.sector ?? '';
-
-    const projectStage =
-        project.status ?? '';
-
-    const state =
-        project.state ?? '';
-
-    const region =
-        project.region ?? '';
-
-    const city =
-        project.city_name?.name ??
-        project.city ??
-        '';
-
-    /*
-    |--------------------------------------------------------------------------
-    | Project Type
-    |--------------------------------------------------------------------------
     |
-    | BX1 full resource contains building_use.
+    | IMPORTANT:
     |
-    | Example:
-    | Commercial, Retail
+    | OLD FLOW:
+    |
+    | router.get('/cms/projects/create', {
+    |     source,
+    |     source_project_id,
+    |     project_name,
+    |     ...
+    | });
+    |
+    | That created:
+    |
+    | /cms/projects/create?source=bx1&project_name=...
+    |
+    |
+    | NEW FLOW:
+    |
+    | POST /cms/projects/import
+    |
+    | Laravel stores the selected project temporarily in session and redirects
+    | to:
+    |
+    | /cms/projects/create
+    |
+    | Therefore no project information appears in the browser URL.
     |
     */
 
-    const projectType =
-        project.building_use ??
-        project.project_type?.name ??
-        project.project_type ??
-        '';
+    function selectProject(project) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Project ID
+        |--------------------------------------------------------------------------
+        */
+
+        const sourceProjectId =
+            project?.id
+            ??
+            project?.project_id
+            ??
+            '';
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Location
-    |--------------------------------------------------------------------------
-    */
-
-    const location = [
-        city,
-        state,
-    ]
-        .filter(Boolean)
-        .join(', ');
+        setSelectedId(
+            sourceProjectId
+        );
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Open Existing CMS Form
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | Project Name
+        |--------------------------------------------------------------------------
+        */
 
-    router.get(
-        '/cms/projects/create',
-        {
-            source: 'bx1',
+        const projectName =
+            project?.name
+            ??
+            project?.project_name
+            ??
+            '';
 
-            source_project_id:
-                sourceProjectId,
 
-            project_name:
-                projectName,
+        /*
+        |--------------------------------------------------------------------------
+        | Sector
+        |--------------------------------------------------------------------------
+        */
 
-            sector:
-                sector,
+        const sector =
+            project?.sector
+            ??
+            '';
 
-            project_type:
-                projectType,
 
-            project_stage:
-                projectStage,
+        /*
+        |--------------------------------------------------------------------------
+        | Project Stage
+        |--------------------------------------------------------------------------
+        |
+        | BX1 public API returns latest_status.
+        |
+        | Fallbacks are retained for BX2.
+        |
+        */
 
-            city:
+        const projectStage =
+            project?.latest_status
+            ??
+            project?.status
+            ??
+            project?.project_status
+            ??
+            '';
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | State
+        |--------------------------------------------------------------------------
+        */
+
+        const state =
+            project?.state
+            ??
+            '';
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Region
+        |--------------------------------------------------------------------------
+        */
+
+        const region =
+            project?.region
+            ??
+            '';
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | City
+        |--------------------------------------------------------------------------
+        */
+
+        const city =
+            project?.city
+            ??
+            project?.city_name?.name
+            ??
+            '';
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Project Type
+        |--------------------------------------------------------------------------
+        */
+
+        const projectType =
+            project?.building_use
+            ??
+            project?.project_type?.name
+            ??
+            project?.project_type
+            ??
+            '';
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Location
+        |--------------------------------------------------------------------------
+        */
+
+        const location =
+            [
                 city,
-
-            state:
                 state,
+            ]
+                .filter(Boolean)
+                .join(', ');
 
-            region:
-                region,
 
-            location:
-                location,
+        /*
+        |--------------------------------------------------------------------------
+        | POST Import
+        |--------------------------------------------------------------------------
+        */
+
+   router.post(
+    '/cms/projects/import',
+
+    {
+        source:
+            source,
+
+        source_project_id:
+            sourceProjectId,
+
+        project_name:
+            projectName,
+
+        sector:
+            sector,
+
+        project_type:
+            projectType,
+
+        project_stage:
+            projectStage,
+
+        city:
+            city,
+
+        state:
+            state,
+
+        region:
+            region,
+
+        location:
+            location,
+    },
+
+    {
+        preserveScroll: true,
+
+        preserveState: true,
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Import Validation Error
+        |--------------------------------------------------------------------------
+        */
+
+        onError: (errors) => {
+
+            console.error(
+                'Project import error:',
+                errors
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Reset Select Button
+            |--------------------------------------------------------------------------
+            */
+
+            setSelectedId(
+                null
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Duplicate Project
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                errors?.source_project_id
+            ) {
+
+                setError(
+                    errors.source_project_id
+                );
+
+                return;
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Other Validation Error
+            |--------------------------------------------------------------------------
+            */
+
+            const firstError =
+                Object.values(
+                    errors || {}
+                )[0];
+
+
+            if (firstError) {
+
+                setError(
+                    String(firstError)
+                );
+
+                return;
+            }
+
+
+            setError(
+                'Unable to open the selected project.'
+            );
         },
-        {
-            preserveScroll: true,
-        }
-    );
-}
+    }
+);
+    }
+
 
     /*
     |--------------------------------------------------------------------------
-    | Pagination
+    | Pagination Numbers
     |--------------------------------------------------------------------------
     */
 
     function pageNumbers() {
 
         const current =
-            Number(meta.current_page || 1);
+            Number(
+                meta.current_page
+                ||
+                1
+            );
+
 
         const last =
-            Number(meta.last_page || 1);
+            Number(
+                meta.last_page
+                ||
+                1
+            );
+
 
         const start =
             Math.max(
@@ -405,814 +719,462 @@ function selectProject(project) {
                 current - 2
             );
 
+
         const end =
             Math.min(
                 last,
                 current + 2
             );
 
+
         const pages = [];
 
+
         for (
-            let page = start;
-            page <= end;
-            page++
+            let p = start;
+            p <= end;
+            p++
         ) {
-            pages.push(page);
+
+            pages.push(p);
         }
+
 
         return pages;
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Render
+    |--------------------------------------------------------------------------
+    */
+
     return (
 
         <CmsLayout
             title="Import Project"
+
             action={
                 <Link
                     href="/cms/projects"
-                    className="bx1-back-button"
+                    className="bx-back"
                 >
                     <ArrowLeftIcon />
 
-                    <span>
-                        Back to Projects
-                    </span>
+                    Back to Projects
                 </Link>
             }
         >
 
-            <Head title="Import BX1 Project · Biltrax CMS" />
+            <Head
+                title="Import Biltrax Project · Biltrax CMS"
+            />
 
 
             <style>{`
 
-                .bx1-page {
+                .bx-page {
                     max-width: 1500px;
                     margin: 0 auto;
-                    animation: bx1Enter .4s ease both;
                 }
 
-
-                /*
-                |--------------------------------------------------------------------------
-                | Back
-                |--------------------------------------------------------------------------
-                */
-
-                .bx1-back-button {
+                .bx-back {
                     height: 40px;
                     padding: 0 14px;
-
                     display: inline-flex;
                     align-items: center;
-                    justify-content: center;
                     gap: 8px;
-
                     border: 1px solid #e1e5ea;
                     border-radius: 9px;
-
-                    background: #ffffff;
-
+                    background: #fff;
                     color: #475467 !important;
-
                     text-decoration: none;
-
                     font-size: 13px;
                     font-weight: 600;
-
-                    transition: .18s ease;
                 }
 
-                .bx1-back-button:hover {
-                    color: #c0122f !important;
-                    border-color: rgba(192,18,47,.25);
-                    background: #fff8f9;
-                    transform: translateY(-1px);
-                }
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Hero
-                |--------------------------------------------------------------------------
-                */
-
-                .bx1-hero {
-                    padding: 24px 26px;
-                    margin-bottom: 18px;
-
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 20px;
-
-                    border: 1px solid #e5e7eb;
-                    border-radius: 16px;
-
-                    background:
-                        linear-gradient(
-                            135deg,
-                            #ffffff 0%,
-                            #fffafb 100%
-                        );
-
-                    box-shadow:
-                        0 1px 2px rgba(16,24,40,.02),
-                        0 8px 28px rgba(16,24,40,.035);
-                }
-
-                .bx1-hero-left {
-                    display: flex;
-                    align-items: center;
-                    gap: 14px;
-                }
-
-                .bx1-hero-icon {
-                    width: 48px;
-                    height: 48px;
-                    flex: 0 0 48px;
-
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-
-                    border-radius: 13px;
-
-                    color: #c0122f;
-
-                    background:
-                        rgba(192,18,47,.08);
-                }
-
-                .bx1-hero-title {
-                    color: #111827;
-                    font-size: 18px;
-                    line-height: 1.3;
-                    font-weight: 700;
-                }
-
-                .bx1-hero-description {
-                    margin-top: 4px;
-
-                    color: #7c8594;
-
-                    font-size: 12.5px;
-                    line-height: 1.5;
-                }
-
-                .bx1-live-badge {
-                    padding: 7px 11px;
-
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 7px;
-
-                    border-radius: 20px;
-
-                    background: #eaf8f0;
-
-                    color: #147a4b;
-
-                    font-size: 11px;
-                    font-weight: 650;
-                }
-
-                .bx1-live-badge::before {
-                    content: "";
-
-                    width: 6px;
-                    height: 6px;
-
-                    border-radius: 50%;
-
-                    background: currentColor;
-                }
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Search
-                |--------------------------------------------------------------------------
-                */
-
-                .bx1-search-card {
-                    padding: 20px;
-                    margin-bottom: 18px;
-
+                .bx-card {
+                    background: #fff;
                     border: 1px solid #e7e9ee;
                     border-radius: 16px;
-
-                    background: #ffffff;
-
                     box-shadow:
-                        0 1px 2px rgba(16,24,40,.02),
                         0 8px 28px rgba(16,24,40,.035);
+                    margin-bottom: 18px;
                 }
 
-                .bx1-search-form {
+                .bx-controls {
+                    padding: 20px;
+                }
+
+                .bx-title {
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #111827;
+                    margin-bottom: 4px;
+                }
+
+                .bx-sub {
+                    font-size: 13px;
+                    color: #667085;
+                    margin-bottom: 18px;
+                }
+
+                .bx-source-row,
+                .bx-days {
                     display: flex;
+                    gap: 8px;
+                    flex-wrap: wrap;
                     align-items: center;
-                    gap: 10px;
                 }
 
-                .bx1-search-wrap {
+                .bx-source-row {
+                    margin-bottom: 14px;
+                }
+
+                .bx-source,
+                .bx-day {
+                    border: 1px solid #dfe3e8;
+                    background: #fff;
+                    color: #475467;
+                    border-radius: 9px;
+                    height: 38px;
+                    padding: 0 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                }
+
+                .bx-source.active,
+                .bx-day.active {
+                    background: #c0122f;
+                    color: #fff;
+                    border-color: #c0122f;
+                }
+
+                .bx-source {
+                    min-width: 86px;
+                }
+
+                .bx-label {
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: #344054;
+                    margin-right: 4px;
+                }
+
+                .bx-search {
+                    display: flex;
+                    gap: 10px;
+                    margin-top: 16px;
+                }
+
+                .bx-search-wrap {
                     position: relative;
                     flex: 1;
                 }
 
-                .bx1-search-icon {
+                .bx-search-wrap svg {
                     position: absolute;
-
-                    left: 15px;
-                    top: 50%;
-
-                    transform:
-                        translateY(-50%);
-
-                    display: flex;
-
-                    color: #8a91a0;
-
-                    pointer-events: none;
+                    left: 14px;
+                    top: 14px;
+                    color: #98a2b3;
                 }
 
-                .bx1-search-input {
+                .bx-search input {
                     width: 100%;
                     height: 46px;
-
-                    box-sizing: border-box;
-
-                    padding:
-                        0 16px 0 45px;
-
-                    border:
-                        1px solid #dfe3e8;
-
+                    border: 1px solid #dfe3e8;
                     border-radius: 10px;
-
-                    background: #fafbfc;
-
-                    color: #111827;
-
-                    font-family: inherit;
-                    font-size: 13.5px;
-
-                    outline: none;
-
-                    transition: .18s ease;
+                    padding: 0 14px 0 44px;
+                    box-sizing: border-box;
                 }
 
-                .bx1-search-input:focus {
-                    background: #ffffff;
-
-                    border-color: #c0122f;
-
-                    box-shadow:
-                        0 0 0 3px
-                        rgba(192,18,47,.08);
-                }
-
-                .bx1-search-button,
-                .bx1-refresh-button {
+                .bx-search button {
                     height: 46px;
-
                     border: 0;
                     border-radius: 10px;
-
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-
-                    cursor: pointer;
-
-                    font-family: inherit;
-                    font-size: 13px;
-                    font-weight: 600;
-                }
-
-                .bx1-search-button {
-                    padding: 0 20px;
-
-                    gap: 8px;
-
+                    padding: 0 18px;
                     background: #111827;
-
-                    color: #ffffff;
+                    color: #fff;
+                    font-weight: 600;
+                    cursor: pointer;
                 }
 
-                .bx1-search-button:hover {
-                    background: #202b3c;
+                .bx-refresh {
+                    width: 46px !important;
+                    padding: 0 !important;
+                    display: grid;
+                    place-items: center;
                 }
 
-                .bx1-refresh-button {
-                    width: 46px;
-
-                    border:
-                        1px solid #e1e5ea;
-
-                    background: #ffffff;
-
-                    color: #596171;
+                .bx-range {
+                    margin-top: 12px;
+                    font-size: 12px;
+                    color: #667085;
                 }
 
-                .bx1-refresh-button:hover {
-                    color: #c0122f;
-                    background: #fff8f9;
-                }
-
-                .bx1-search-button:disabled,
-                .bx1-refresh-button:disabled {
-                    opacity: .55;
-                    cursor: wait;
-                }
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Table
-                |--------------------------------------------------------------------------
-                */
-
-                .bx1-table-card {
-                    overflow: hidden;
-
-                    border:
-                        1px solid #e7e9ee;
-
-                    border-radius: 16px;
-
-                    background: #ffffff;
-
-                    box-shadow:
-                        0 1px 2px rgba(16,24,40,.02),
-                        0 8px 28px rgba(16,24,40,.035);
-                }
-
-                .bx1-table-header {
-                    padding: 19px 23px;
-
+                .bx-table-head {
+                    padding: 18px 20px;
+                    border-bottom: 1px solid #eaecf0;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    gap: 20px;
-
-                    border-bottom:
-                        1px solid #eceef2;
                 }
 
-                .bx1-table-header-left {
+                .bx-table-title {
                     display: flex;
                     align-items: center;
-                    gap: 11px;
-                }
-
-                .bx1-table-header-icon {
-                    width: 37px;
-                    height: 37px;
-
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-
-                    border-radius: 10px;
-
-                    color: #c0122f;
-
-                    background:
-                        rgba(192,18,47,.08);
-                }
-
-                .bx1-table-title {
-                    color: #111827;
-
-                    font-size: 14px;
+                    gap: 10px;
                     font-weight: 700;
+                    color: #101828;
                 }
 
-                .bx1-table-subtitle {
-                    margin-top: 3px;
-
-                    color: #8a91a0;
-
-                    font-size: 11.5px;
+                .bx-count {
+                    font-size: 12px;
+                    color: #667085;
                 }
 
-                .bx1-count {
-                    padding: 6px 10px;
-
-                    border-radius: 20px;
-
-                    background: #f3f4f6;
-
-                    color: #596171;
-
-                    font-size: 11.5px;
-                    font-weight: 600;
+                .bx-table-wrap {
+                    overflow: auto;
                 }
 
-                .bx1-table-wrap {
+                .bx-table {
                     width: 100%;
-                    overflow-x: auto;
-                }
-
-                .bx1-table {
-                    width: 100%;
-
                     border-collapse: collapse;
+                    min-width: 1000px;
                 }
 
-                .bx1-table thead {
-                    background: #fafbfc;
-                }
-
-                .bx1-table th {
-                    padding: 13px 18px;
-
+                .bx-table th {
+                    background: #f9fafb;
                     text-align: left;
-
-                    border-bottom:
-                        1px solid #eceef2;
-
-                    color: #697180;
-
-                    font-size: 10.5px;
-                    font-weight: 700;
-
+                    padding: 12px 16px;
+                    font-size: 11px;
                     text-transform: uppercase;
-
-                    letter-spacing: .06em;
-
-                    white-space: nowrap;
+                    letter-spacing: .04em;
+                    color: #667085;
+                    border-bottom: 1px solid #eaecf0;
                 }
 
-                .bx1-table td {
-                    padding: 16px 18px;
-
-                    border-bottom:
-                        1px solid #eef0f3;
-
-                    color: #3c4350;
-
+                .bx-table td {
+                    padding: 14px 16px;
+                    border-bottom: 1px solid #f0f1f3;
                     font-size: 13px;
-
-                    vertical-align: middle;
+                    color: #344054;
                 }
 
-                .bx1-table tbody tr {
-                    transition:
-                        background .18s ease;
-                }
-
-                .bx1-table tbody tr:hover {
-                    background: #fafbfc;
-                }
-
-                .bx1-project {
-                    min-width: 260px;
-
-                    display: flex;
-                    align-items: center;
-                    gap: 11px;
-                }
-
-                .bx1-project-avatar {
-                    width: 38px;
-                    height: 38px;
-
-                    flex: 0 0 38px;
-
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-
-                    border-radius: 10px;
-
-                    background: #f2f3f5;
-
-                    color: #697180;
-
-                    font-size: 13px;
-                    font-weight: 700;
-                }
-
-                .bx1-project-name {
-                    max-width: 400px;
-
-                    color: #111827;
-
+                .bx-name {
                     font-weight: 650;
-                    line-height: 1.4;
+                    color: #101828;
                 }
 
-                .bx1-project-id {
+                .bx-id {
+                    font-size: 11px;
+                    color: #98a2b3;
                     margin-top: 3px;
-
-                    color: #9aa1ad;
-
-                    font-size: 10.5px;
                 }
 
-                .bx1-location {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-
-                    white-space: nowrap;
-                }
-
-                .bx1-location svg {
-                    color: #9aa1ad;
-                }
-
-                .bx1-select-button {
-                    height: 36px;
-
-                    padding: 0 13px;
-
-                    border: 0;
+                .bx-select {
+                    border: 1px solid #f0c4cc;
+                    background: #fff7f8;
+                    color: #b4233d;
                     border-radius: 8px;
-
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 7px;
-
-                    background: #c0122f;
-
-                    color: #ffffff;
-
-                    cursor: pointer;
-
-                    font-family: inherit;
-                    font-size: 12px;
+                    padding: 8px 13px;
                     font-weight: 650;
-
-                    white-space: nowrap;
-
-                    transition: .18s ease;
+                    cursor: pointer;
                 }
 
-                .bx1-select-button:hover {
-                    background: #a90f29;
-
-                    transform:
-                        translateY(-1px);
-
-                    box-shadow:
-                        0 5px 12px
-                        rgba(192,18,47,.18);
-                }
-
-                .bx1-select-button:disabled {
+                .bx-select:disabled {
                     opacity: .6;
-                    cursor: wait;
                 }
 
-
-                /*
-                |--------------------------------------------------------------------------
-                | States
-                |--------------------------------------------------------------------------
-                */
-
-                .bx1-state {
-                    padding: 60px 25px !important;
-
+                .bx-empty,
+                .bx-error {
+                    padding: 40px;
                     text-align: center;
+                    color: #667085;
                 }
 
-                .bx1-state-icon {
-                    width: 52px;
-                    height: 52px;
-
-                    margin:
-                        0 auto 13px;
-
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-
-                    border-radius: 14px;
-
-                    background: #f4f5f7;
-
-                    color: #8a91a0;
-                }
-
-                .bx1-state-title {
-                    color: #202631;
-
-                    font-size: 14px;
-                    font-weight: 700;
-                }
-
-                .bx1-state-text {
-                    margin-top: 5px;
-
-                    color: #8a91a0;
-
-                    font-size: 12px;
-                }
-
-                .bx1-error {
+                .bx-error {
                     color: #b42318;
                 }
 
-
-                /*
-                |--------------------------------------------------------------------------
-                | Pagination
-                |--------------------------------------------------------------------------
-                */
-
-                .bx1-pagination {
+                .bx-pagination {
                     padding: 16px 20px;
-
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    gap: 15px;
-
-                    border-top:
-                        1px solid #eceef2;
-
-                    background: #fafbfc;
+                    gap: 12px;
                 }
 
-                .bx1-pagination-info {
-                    color: #7c8594;
-
-                    font-size: 11.5px;
-                }
-
-                .bx1-pagination-buttons {
+                .bx-pages {
                     display: flex;
-                    align-items: center;
-                    gap: 5px;
+                    gap: 6px;
                 }
 
-                .bx1-page-button {
-                    min-width: 34px;
-                    height: 34px;
-
-                    padding: 0 9px;
-
-                    border:
-                        1px solid #e1e5ea;
-
+                .bx-page-btn {
+                    min-width: 36px;
+                    height: 36px;
+                    border: 1px solid #e1e5ea;
+                    background: #fff;
                     border-radius: 8px;
-
-                    background: #ffffff;
-
-                    color: #596171;
-
                     cursor: pointer;
-
-                    font-family: inherit;
-                    font-size: 12px;
-                    font-weight: 600;
                 }
 
-                .bx1-page-button:hover:not(:disabled) {
-                    border-color:
-                        rgba(192,18,47,.3);
-
-                    color: #c0122f;
+                .bx-page-btn.active {
+                    background: #111827;
+                    color: #fff;
+                    border-color: #111827;
                 }
 
-                .bx1-page-button.active {
-                    border-color: #c0122f;
-
-                    background: #c0122f;
-
-                    color: #ffffff;
-                }
-
-                .bx1-page-button:disabled {
+                .bx-page-btn:disabled {
                     opacity: .45;
-                    cursor: default;
+                    cursor: not-allowed;
                 }
 
+                @media (max-width: 760px) {
 
-                @keyframes bx1Enter {
-
-                    from {
-                        opacity: 0;
-
-                        transform:
-                            translateY(6px);
+                    .bx-search {
+                        flex-wrap: wrap;
                     }
 
-                    to {
-                        opacity: 1;
-
-                        transform:
-                            translateY(0);
+                    .bx-search-wrap {
+                        flex-basis: 100%;
                     }
-                }
 
-
-                @media (max-width: 768px) {
-
-                    .bx1-hero {
+                    .bx-pagination {
+                        flex-direction: column;
                         align-items: flex-start;
-                        flex-direction: column;
-                    }
-
-                    .bx1-search-form {
-                        align-items: stretch;
-                        flex-direction: column;
-                    }
-
-                    .bx1-search-button,
-                    .bx1-refresh-button {
-                        width: 100%;
-                    }
-
-                    .bx1-pagination {
-                        align-items: stretch;
-                        flex-direction: column;
-                    }
-
-                    .bx1-pagination-buttons {
-                        overflow-x: auto;
-                    }
-
-                    .bx1-back-button span {
-                        display: none;
-                    }
-
-                    .bx1-back-button {
-                        width: 40px;
-                        padding: 0;
                     }
                 }
 
             `}</style>
 
 
-            <div className="bx1-page">
+            <div className="bx-page">
 
 
-                {/* HERO */}
+                {/* CONTROLS */}
 
-                <div className="bx1-hero">
+                <div className="bx-card bx-controls">
 
-                    <div className="bx1-hero-left">
+                    <div className="bx-title">
+                        Biltrax Project Import
+                    </div>
 
-                        <div className="bx1-hero-icon">
-                            <ProjectIcon />
-                        </div>
 
-                        <div>
+                    <div className="bx-sub">
+                        Choose BX1 or BX2, select the updated-project period, then import a project into CMS.
+                    </div>
 
-                            <div className="bx1-hero-title">
-                                Import Project from BX1
-                            </div>
 
-                            <div className="bx1-hero-description">
-                                Search the BX1 project database and select a project to add to the Biltrax website.
-                            </div>
+                    {/* SOURCE */}
 
-                        </div>
+                    <div className="bx-source-row">
+
+                        <span className="bx-label">
+                            SOURCE
+                        </span>
+
+
+                        {[
+                            'bx1',
+                            'bx2',
+                        ].map(
+                            (item) => (
+
+                                <button
+                                    key={item}
+                                    type="button"
+                                    className={
+                                        `bx-source ${
+                                            source === item
+                                                ? 'active'
+                                                : ''
+                                        }`
+                                    }
+                                    onClick={
+                                        () =>
+                                            changeSource(
+                                                item
+                                            )
+                                    }
+                                    disabled={
+                                        loading
+                                    }
+                                >
+                                    {item.toUpperCase()}
+                                </button>
+
+                            )
+                        )}
 
                     </div>
 
 
-                    <div className="bx1-live-badge">
-                        BX1 Live Data
+                    {/* DAYS */}
+
+                    <div className="bx-days">
+
+                        <span className="bx-label">
+                            UPDATED IN LAST
+                        </span>
+
+
+                        {dayOptions.map(
+                            (item) => (
+
+                                <button
+                                    key={item}
+                                    type="button"
+                                    className={
+                                        `bx-day ${
+                                            days === item
+                                                ? 'active'
+                                                : ''
+                                        }`
+                                    }
+                                    onClick={
+                                        () =>
+                                            changeDays(
+                                                item
+                                            )
+                                    }
+                                    disabled={
+                                        loading
+                                    }
+                                >
+                                    {item}D
+                                </button>
+
+                            )
+                        )}
+
                     </div>
 
-                </div>
 
-
-                {/* SEARCH */}
-
-                <div className="bx1-search-card">
+                    {/* SEARCH */}
 
                     <form
-                        className="bx1-search-form"
+                        className="bx-search"
                         onSubmit={submitSearch}
                     >
 
-                        <div className="bx1-search-wrap">
+                        <div className="bx-search-wrap">
 
-                            <span className="bx1-search-icon">
-                                <SearchIcon />
-                            </span>
+                            <SearchIcon />
+
 
                             <input
-                                type="text"
-                                className="bx1-search-input"
                                 value={query}
-                                onChange={(e) =>
-                                    setQuery(
-                                        e.target.value
-                                    )
+                                onChange={
+                                    (e) =>
+                                        setQuery(
+                                            e.target.value
+                                        )
                                 }
-                                placeholder="Search BX1 projects by name, city, state or sector..."
+                                placeholder={
+                                    `Search ${source.toUpperCase()} projects by name, city, state or sector...`
+                                }
                             />
 
                         </div>
@@ -1220,29 +1182,25 @@ function selectProject(project) {
 
                         <button
                             type="submit"
-                            className="bx1-search-button"
                             disabled={loading}
                         >
-
-                            <SearchIcon />
-
-                            {loading
-                                ? 'Loading...'
-                                : 'Search'}
-
+                            Search
                         </button>
 
 
                         <button
                             type="button"
-                            className="bx1-refresh-button"
-                            disabled={loading}
+                            className="bx-refresh"
                             title="Refresh"
-                            onClick={() =>
-                                loadProjects(
-                                    meta.current_page,
-                                    query
-                                )
+                            disabled={loading}
+                            onClick={
+                                () =>
+                                    loadProjects(
+                                        meta.current_page,
+                                        query.trim(),
+                                        source,
+                                        days
+                                    )
                             }
                         >
                             <RefreshIcon />
@@ -1250,187 +1208,175 @@ function selectProject(project) {
 
                     </form>
 
+
+                    {/* DATE RANGE */}
+
+                    {dateRange && (
+
+                        <div className="bx-range">
+
+                            API filter:
+                            {' '}
+                            project_updated_date_range
+                            {' '}
+                            {dateRange.start_date}
+                            {' '}
+                            to
+                            {' '}
+                            {dateRange.end_date}
+
+                        </div>
+
+                    )}
+
                 </div>
 
 
-                {/* TABLE */}
+                {/* PROJECT TABLE */}
 
-                <div className="bx1-table-card">
+                <div className="bx-card">
 
-                    <div className="bx1-table-header">
+                    <div className="bx-table-head">
 
-                        <div className="bx1-table-header-left">
+                        <div className="bx-table-title">
 
-                            <div className="bx1-table-header-icon">
-                                <ProjectIcon />
-                            </div>
+                            <ProjectIcon />
 
-                            <div>
-
-                                <div className="bx1-table-title">
-                                    BX1 Project Directory
-                                </div>
-
-                                <div className="bx1-table-subtitle">
-                                    Select a project to import into CMS
-                                </div>
-
-                            </div>
+                            {source.toUpperCase()}
+                            {' '}
+                            Project Directory
 
                         </div>
 
 
-                        <div className="bx1-count">
-                            {meta.total
-                                ? `${meta.total.toLocaleString()} projects`
-                                : `${projects.length} projects`}
+                        <div className="bx-count">
+
+                            {Number(
+                                meta.total
+                                ||
+                                0
+                            ).toLocaleString(
+                                'en-IN'
+                            )}
+
+                            {' '}
+                            projects · 50 per page
+
                         </div>
 
                     </div>
 
 
-                    <div className="bx1-table-wrap">
+                    {error ? (
 
-                        <table className="bx1-table">
+                        <div className="bx-error">
+                            {error}
+                        </div>
 
-                            <thead>
+                    ) : loading ? (
 
-                                <tr>
-                                    <th>Project</th>
-                                    <th>Sector</th>
-                                    <th>Location</th>
-                                    <th>Updated</th>
-                                    <th>Action</th>
-                                </tr>
+                        <div className="bx-empty">
 
-                            </thead>
+                            Loading
+                            {' '}
+                            {source.toUpperCase()}
+                            {' '}
+                            projects...
 
+                        </div>
 
-                            <tbody>
+                    ) : projects.length === 0 ? (
 
-                                {loading ? (
+                        <div className="bx-empty">
+                            No projects found for the selected period.
+                        </div>
 
-                                    <tr>
+                    ) : (
 
-                                        <td
-                                            colSpan="5"
-                                            className="bx1-state"
-                                        >
+                        <div className="bx-table-wrap">
 
-                                            <div className="bx1-state-icon">
-                                                <RefreshIcon />
-                                            </div>
+                            <table className="bx-table">
 
-                                            <div className="bx1-state-title">
-                                                Loading BX1 Projects
-                                            </div>
-
-                                            <div className="bx1-state-text">
-                                                Retrieving project data from BX1...
-                                            </div>
-
-                                        </td>
-
-                                    </tr>
-
-                                ) : error ? (
+                                <thead>
 
                                     <tr>
 
-                                        <td
-                                            colSpan="5"
-                                            className="bx1-state"
-                                        >
+                                        <th>
+                                            Project
+                                        </th>
 
-                                            <div className="bx1-state-icon">
-                                                <ProjectIcon />
-                                            </div>
+                                        <th>
+                                            Sector
+                                        </th>
 
-                                            <div className="bx1-state-title bx1-error">
-                                                Unable to Load Projects
-                                            </div>
+                                        <th>
+                                            Project Stage
+                                        </th>
 
-                                            <div className="bx1-state-text">
-                                                {error}
-                                            </div>
+                                        <th>
+                                            City
+                                        </th>
 
-                                        </td>
+                                        <th>
+                                            State
+                                        </th>
 
-                                    </tr>
+                                        <th>
+                                            Region
+                                        </th>
 
-                                ) : projects.length === 0 ? (
+                                        <th>
+                                            Updated
+                                        </th>
 
-                                    <tr>
-
-                                        <td
-                                            colSpan="5"
-                                            className="bx1-state"
-                                        >
-
-                                            <div className="bx1-state-icon">
-                                                <SearchIcon />
-                                            </div>
-
-                                            <div className="bx1-state-title">
-                                                No Projects Found
-                                            </div>
-
-                                            <div className="bx1-state-text">
-                                                Try changing your search criteria.
-                                            </div>
-
-                                        </td>
+                                        <th>
+                                        </th>
 
                                     </tr>
 
-                                ) : (
+                                </thead>
 
-                                    projects.map(
+
+                                <tbody>
+
+                                    {projects.map(
                                         (project) => {
 
-                                            const city =
-                                                project.city_name?.name ||
-                                                project.city ||
-                                                '';
+                                            const projectId =
+                                                project?.id
+                                                ??
+                                                project?.project_id;
 
-                                            const location =
-                                                [
-                                                    city,
-                                                    project.state,
-                                                ]
-                                                    .filter(Boolean)
-                                                    .join(', ');
 
                                             return (
 
-                                                <tr key={project.id}>
+                                                <tr
+                                                    key={
+                                                        `${source}-${projectId}`
+                                                    }
+                                                >
 
                                                     <td>
 
-                                                        <div className="bx1-project">
+                                                        <div className="bx-name">
 
-                                                            <div className="bx1-project-avatar">
-                                                                {String(
-                                                                    project.name ||
-                                                                    'P'
-                                                                )
-                                                                    .trim()
-                                                                    .charAt(0)
-                                                                    .toUpperCase()}
-                                                            </div>
+                                                            {project?.name
+                                                                ??
+                                                                project?.project_name
+                                                                ??
+                                                                'Untitled Project'}
 
-                                                            <div>
+                                                        </div>
 
-                                                                <div className="bx1-project-name">
-                                                                    {project.name ||
-                                                                        'Untitled Project'}
-                                                                </div>
 
-                                                                <div className="bx1-project-id">
-                                                                    BX1 ID #{project.id}
-                                                                </div>
+                                                        <div className="bx-id">
 
-                                                            </div>
+                                                            {source.toUpperCase()}
+                                                            {' '}
+                                                            ID #
+                                                            {projectId
+                                                                ??
+                                                                '—'}
 
                                                         </div>
 
@@ -1438,62 +1384,90 @@ function selectProject(project) {
 
 
                                                     <td>
-                                                        {project.sector || '—'}
-                                                    </td>
 
-
-                                                    <td>
-
-                                                        {location ? (
-
-                                                            <span className="bx1-location">
-
-                                                                <LocationIcon />
-
-                                                                {location}
-
-                                                            </span>
-
-                                                        ) : (
-                                                            '—'
-                                                        )}
+                                                        {project?.sector
+                                                            ??
+                                                            '—'}
 
                                                     </td>
 
 
                                                     <td>
-                                                        {project.updated_at
-                                                            ? new Date(
-                                                                project.updated_at
-                                                            ).toLocaleDateString(
-                                                                'en-IN'
-                                                            )
-                                                            : '—'}
+
+                                                        {project?.latest_status
+                                                            ??
+                                                            project?.status
+                                                            ??
+                                                            project?.project_status
+                                                            ??
+                                                            '—'}
+
+                                                    </td>
+
+
+                                                    <td>
+
+                                                        {project?.city
+                                                            ??
+                                                            project?.city_name?.name
+                                                            ??
+                                                            '—'}
+
+                                                    </td>
+
+
+                                                    <td>
+
+                                                        {project?.state
+                                                            ??
+                                                            '—'}
+
+                                                    </td>
+
+
+                                                    <td>
+
+                                                        {project?.region
+                                                            ??
+                                                            '—'}
+
+                                                    </td>
+
+
+                                                    <td>
+
+                                                        {project?.updated_at
+                                                            ??
+                                                            project?.modified_at
+                                                            ??
+                                                            '—'}
+
                                                     </td>
 
 
                                                     <td>
 
                                                         <button
+                                                            className="bx-select"
                                                             type="button"
-                                                            className="bx1-select-button"
                                                             disabled={
-                                                                selectedId ===
-                                                                project.id
+                                                                selectedId
+                                                                ===
+                                                                projectId
                                                             }
-                                                            onClick={() =>
-                                                                selectProject(
-                                                                    project
-                                                                )
+                                                            onClick={
+                                                                () =>
+                                                                    selectProject(
+                                                                        project
+                                                                    )
                                                             }
                                                         >
 
-                                                            {selectedId ===
-                                                            project.id
+                                                            {selectedId
+                                                                ===
+                                                                projectId
                                                                 ? 'Opening...'
                                                                 : 'Select'}
-
-                                                            <ArrowRightIcon />
 
                                                         </button>
 
@@ -1503,113 +1477,120 @@ function selectProject(project) {
 
                                             );
                                         }
-                                    )
+                                    )}
 
-                                )}
+                                </tbody>
 
-                            </tbody>
+                            </table>
 
-                        </table>
+                        </div>
+
+                    )}
+
+
+                    {/* PAGINATION */}
+
+                    <div className="bx-pagination">
+
+                        <div className="bx-count">
+
+                            Page
+                            {' '}
+                            {meta.current_page}
+                            {' '}
+                            of
+                            {' '}
+                            {meta.last_page}
+
+                        </div>
+
+
+                        <div className="bx-pages">
+
+                            <button
+                                className="bx-page-btn"
+                                disabled={
+                                    loading
+                                    ||
+                                    meta.current_page <= 1
+                                }
+                                onClick={
+                                    () =>
+                                        loadProjects(
+                                            meta.current_page - 1,
+                                            query.trim(),
+                                            source,
+                                            days
+                                        )
+                                }
+                            >
+                                ‹
+                            </button>
+
+
+                            {pageNumbers().map(
+                                (p) => (
+
+                                    <button
+                                        key={p}
+                                        className={
+                                            `bx-page-btn ${
+                                                p
+                                                ===
+                                                Number(
+                                                    meta.current_page
+                                                )
+                                                    ? 'active'
+                                                    : ''
+                                            }`
+                                        }
+                                        disabled={
+                                            loading
+                                        }
+                                        onClick={
+                                            () =>
+                                                loadProjects(
+                                                    p,
+                                                    query.trim(),
+                                                    source,
+                                                    days
+                                                )
+                                        }
+                                    >
+                                        {p}
+                                    </button>
+
+                                )
+                            )}
+
+
+                            <button
+                                className="bx-page-btn"
+                                disabled={
+                                    loading
+                                    ||
+                                    meta.current_page
+                                    >=
+                                    meta.last_page
+                                }
+                                onClick={
+                                    () =>
+                                        loadProjects(
+                                            meta.current_page + 1,
+                                            query.trim(),
+                                            source,
+                                            days
+                                        )
+                                }
+                            >
+                                ›
+                            </button>
+
+                        </div>
 
                     </div>
 
-
-                    {!loading &&
-                        !error &&
-                        meta.last_page > 1 && (
-
-                            <div className="bx1-pagination">
-
-                                <div className="bx1-pagination-info">
-
-                                    Page{' '}
-                                    {meta.current_page}{' '}
-                                    of{' '}
-                                    {meta.last_page}
-
-                                    {meta.total > 0 && (
-                                        <>
-                                            {' '}·{' '}
-                                            {meta.total.toLocaleString()}{' '}
-                                            total projects
-                                        </>
-                                    )}
-
-                                </div>
-
-
-                                <div className="bx1-pagination-buttons">
-
-                                    <button
-                                        type="button"
-                                        className="bx1-page-button"
-                                        disabled={
-                                            meta.current_page <= 1 ||
-                                            loading
-                                        }
-                                        onClick={() =>
-                                            loadProjects(
-                                                meta.current_page - 1
-                                            )
-                                        }
-                                    >
-                                        Previous
-                                    </button>
-
-
-                                    {pageNumbers().map(
-                                        (page) => (
-
-                                            <button
-                                                key={page}
-                                                type="button"
-                                                className={
-                                                    `bx1-page-button ${
-                                                        page ===
-                                                        meta.current_page
-                                                            ? 'active'
-                                                            : ''
-                                                    }`
-                                                }
-                                                disabled={loading}
-                                                onClick={() =>
-                                                    loadProjects(
-                                                        page
-                                                    )
-                                                }
-                                            >
-                                                {page}
-                                            </button>
-
-                                        )
-                                    )}
-
-
-                                    <button
-                                        type="button"
-                                        className="bx1-page-button"
-                                        disabled={
-                                            meta.current_page >=
-                                            meta.last_page ||
-                                            loading
-                                        }
-                                        onClick={() =>
-                                            loadProjects(
-                                                meta.current_page + 1
-                                            )
-                                        }
-                                    >
-                                        Next
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                        )}
-
                 </div>
-
 
             </div>
 

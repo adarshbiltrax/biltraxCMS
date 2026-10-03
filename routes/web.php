@@ -11,11 +11,13 @@ use App\Http\Controllers\Cms\ProjectController;
 use App\Http\Controllers\Cms\CareerController;
 use App\Http\Controllers\Cms\MessageController;
 use App\Http\Controllers\Cms\ContactEnquiryController;
+
 use App\Http\Controllers\OpportunityEnquiryController as PublicOpportunityEnquiryController;
 
 use App\Http\Controllers\Cms\OpportunityEnquiryController as CmsOpportunityEnquiryController;
 
 use App\Http\Controllers\Cms\Bx1ProjectController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -39,10 +41,12 @@ Route::get('/api/projects', [
     'projects',
 ]);
 
+
 Route::get('/api/careers', [
     WebsiteApiController::class,
     'careers',
 ]);
+
 
 Route::post('/api/enquiry', [
     WebsiteApiController::class,
@@ -51,6 +55,7 @@ Route::post('/api/enquiry', [
     ValidateCsrfToken::class,
 ]);
 
+
 Route::post('/api/contact', [
     WebsiteApiController::class,
     'contact',
@@ -58,14 +63,15 @@ Route::post('/api/contact', [
     ValidateCsrfToken::class,
 ]);
 
+
 Route::post(
     '/api/opportunity-enquiry',
     [
         PublicOpportunityEnquiryController::class,
-        'store'
+        'store',
     ]
 )->withoutMiddleware([
-    ValidateCsrfToken::class
+    ValidateCsrfToken::class,
 ]);
 
 
@@ -102,8 +108,6 @@ Route::post('/cms/login', [
 |
 | /cms/login
 |
-| The redirect itself is configured in bootstrap/app.php.
-|
 */
 
 Route::prefix('cms')
@@ -134,6 +138,54 @@ Route::prefix('cms')
             AuthController::class,
             'destroy',
         ])->name('logout');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | BX1 / BX2 Project Browser
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/bx1/projects',
+            [
+                Bx1ProjectController::class,
+                'index',
+            ]
+        )->name('bx1.projects.index');
+
+
+        Route::post(
+            '/bx1/projects/search',
+            [
+                Bx1ProjectController::class,
+                'search',
+            ]
+        )->name('bx1.projects.search');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prepare BX1 / BX2 Project Import
+        |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        |
+        | This route MUST be defined before Route::resource('projects', ...)
+        | because "import" must not be interpreted as {project}.
+        |
+        | Selected project information is POSTed here.
+        | Project details will NOT appear in the URL.
+        |
+        */
+
+        Route::post(
+            '/projects/import',
+            [
+                ProjectController::class,
+                'prepareImport',
+            ]
+        )->name('projects.import');
 
 
         /*
@@ -230,67 +282,41 @@ Route::prefix('cms')
         )->name('contact-enquiries.update');
 
 
-/*
-|--------------------------------------------------------------------------
-| OPPORTUNITY ENQUIRIES
-|--------------------------------------------------------------------------
-*/
+        /*
+        |--------------------------------------------------------------------------
+        | Opportunity Enquiries
+        |--------------------------------------------------------------------------
+        */
 
-Route::get(
-    '/opportunity-enquiries',
-    [
-        CmsOpportunityEnquiryController::class,
-        'index'
-    ]
-)->name(
-    'opportunity-enquiries.index'
-);
-
-
-Route::get(
-    '/opportunity-enquiries/{opportunityEnquiry}',
-    [
-        CmsOpportunityEnquiryController::class,
-        'show'
-    ]
-)->name(
-    'opportunity-enquiries.show'
-);
+        Route::get(
+            '/opportunity-enquiries',
+            [
+                CmsOpportunityEnquiryController::class,
+                'index',
+            ]
+        )->name(
+            'opportunity-enquiries.index'
+        );
 
 
-Route::patch(
-    '/opportunity-enquiries/{opportunityEnquiry}',
-    [
-        CmsOpportunityEnquiryController::class,
-        'update'
-    ]
-)->name(
-    'opportunity-enquiries.update'
-);
+        Route::get(
+            '/opportunity-enquiries/{opportunityEnquiry}',
+            [
+                CmsOpportunityEnquiryController::class,
+                'show',
+            ]
+        )->name(
+            'opportunity-enquiries.show'
+        );
 
 
-/*
-|--------------------------------------------------------------------------
-| BX1 Project Browser
-|--------------------------------------------------------------------------
-*/
-
-Route::get(
-    '/bx1/projects',
-    [
-        Bx1ProjectController::class,
-        'index',
-    ]
-)->name('bx1.projects.index');
-
-
-Route::post(
-    '/bx1/projects/search',
-    [
-        Bx1ProjectController::class,
-        'search',
-    ]
-)->name('bx1.projects.search');
-
-
+        Route::patch(
+            '/opportunity-enquiries/{opportunityEnquiry}',
+            [
+                CmsOpportunityEnquiryController::class,
+                'update',
+            ]
+        )->name(
+            'opportunity-enquiries.update'
+        );
     });

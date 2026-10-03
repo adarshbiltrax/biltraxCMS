@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 
 class Bx1ProjectController extends Controller
 {
@@ -20,9 +21,7 @@ class Bx1ProjectController extends Controller
 
     public function index(): Response
     {
-        return Inertia::render(
-            'Cms/Projects/Bx1Projects'
-        );
+        return Inertia::render('Cms/Projects/Bx1Projects');
     }
 
 
@@ -34,14 +33,21 @@ class Bx1ProjectController extends Controller
 
     public function search(Request $request): JsonResponse
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Page
+        |--------------------------------------------------------------------------
+        */
+
         $page = max(
             1,
             (int) $request->input('page', 1)
         );
 
+
         /*
         |--------------------------------------------------------------------------
-        | Maximum 50 projects per request
+        | 50 Projects Per Request
         |--------------------------------------------------------------------------
         */
 
@@ -50,147 +56,260 @@ class Bx1ProjectController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Search Query
+        | Selected Source
         |--------------------------------------------------------------------------
+        |
+        | Supported:
+        |
+        | bx1
+        | bx2
+        |
+        | Default = bx1
+        |
         */
 
-        $search = trim(
-            (string) $request->input('q', '')
+        $source = strtolower(
+            trim(
+                (string) $request->input(
+                    'source',
+                    'bx1'
+                )
+            )
         );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | BX1 Filters
-        |--------------------------------------------------------------------------
-        */
-
-        $filters = [];
-
-        if ($search !== '') {
-
-            $filters[] = [
-                'table_name' => 'projects',
-
-                'column_name' => 'projects.name',
-
-                'column_type' => 'column',
-
-                'operator' => 'contains',
-
-                'value' => $search,
-            ];
+        if (!in_array($source, ['bx1', 'bx2'], true)) {
+            $source = 'bx1';
         }
 
 
         /*
         |--------------------------------------------------------------------------
-        | BX1 Request Payload
+        | Search Text
+        |--------------------------------------------------------------------------
+        */
+
+        $search = trim(
+            (string) $request->input(
+                'q',
+                ''
+            )
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Updated Days Filter
         |--------------------------------------------------------------------------
         |
-        | IMPORTANT:
+        | Allowed:
         |
-        | minimal = false
+        | 7
+        | 15
+        | 30
+        | 45
+        | 60
+        | 90
+        | 120
         |
-        | This makes BX1 return the complete ProjectTestResource data:
+        | Default = 120
         |
-        | status
-        | state name
-        | region
-        | sector name
-        | building_use
-        | categories
-        | project images
-        | project companies
-        | construction information
-        | etc.
+        */
+
+        $allowedDays = [
+            7,
+            15,
+            30,
+            45,
+            60,
+            90,
+            120,
+        ];
+
+        $days = (int) $request->input(
+            'days',
+            120
+        );
+
+        if (!in_array($days, $allowedDays, true)) {
+            $days = 120;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Project Updated Date Range
+        |--------------------------------------------------------------------------
         |
+        | API format:
+        |
+        | DD-MM-YYYY
+        |
+        */
+
+        $endDate = now()->format('d-m-Y');
+
+        $startDate = now()
+            ->subDays($days)
+            ->format('d-m-Y');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | API Payload
         |--------------------------------------------------------------------------
         */
 
         $payload = [
-            'page' => $page,
-
-            'minimal' => false,
-
-            'per_page' => $perPage,
-
-            'conjunction' => 'AND',
-
-            'filters' => $filters,
-
-            'location_type' => 'projects',
-
-            'sort_by_column' => [
-                'column' => 'updated_at',
-                'order' => 'desc',
-                'sortBy' => 'updatedAt',
+            'project_updated_date_range' => [
+                [
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                ],
             ],
         ];
 
 
         /*
         |--------------------------------------------------------------------------
-        | BX1 Configuration
+        | Optional API Search
+        |--------------------------------------------------------------------------
+        |
+        | Only added when BX_API_SEARCH_KEY is configured.
+        |
+        | We do not invent an API parameter name.
+        |
+        */
+
+        $searchKey = trim(
+            (string) config(
+                'services.biltrax.search_key',
+                ''
+            )
+        );
+
+        if (
+            $search !== ''
+            &&
+            $searchKey !== ''
+        ) {
+            $payload[$searchKey] = $search;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Add Per Page If API Supports It
         |--------------------------------------------------------------------------
         */
 
-        $baseUrl = rtrim(
-            (string) config(
-                'services.bx1.url'
-            ),
-            '/'
-        );
-
-        $token = (string) config(
-            'services.bx1.token'
-        );
-
-
-        if (
-            $baseUrl === ''
-            ||
-            $token === ''
-        ) {
-
-            return response()->json([
-                'success' => false,
-
-                'message' =>
-                    'BX1 API configuration is missing.',
-            ], 500);
-        }
+        $payload['per_page'] = $perPage;
 
 
         try {
 
             /*
             |--------------------------------------------------------------------------
-            | Send Request to BX1
+            | BX1
             |--------------------------------------------------------------------------
             */
 
-            $response = Http::withToken($token)
-                ->acceptJson()
-                ->asJson()
-                ->timeout(60)
-                ->post(
-                    $baseUrl . '/project/search',
-                    $payload
-                );
+            if ($source === 'bx1') {
+
+                $accessToken =
+                    $this->getBx1AccessToken();
+
+                $searchUrl =
+                    (string) config(
+                        'services.bx1.search_url'
+                    );
+
+                if ($searchUrl === '') {
+                    throw new RuntimeException(
+                        'BX1 search URL is not configured.'
+                    );
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | BX1 Project Search
+                |--------------------------------------------------------------------------
+                */
+
+                $response = Http::withToken(
+                    $accessToken
+                )
+                    ->acceptJson()
+                    ->asJson()
+                    ->timeout(60)
+                    ->post(
+                        $searchUrl . '?page=' . $page,
+                        $payload
+                    );
+            }
 
 
             /*
             |--------------------------------------------------------------------------
-            | Authentication Error
+            | BX2
             |--------------------------------------------------------------------------
             */
 
-            if ($response->status() === 401) {
+            else {
+
+                $accessToken =
+                    $this->getBx2AccessToken();
+
+                $searchUrl =
+                    (string) config(
+                        'services.bx2.search_url'
+                    );
+
+                if ($searchUrl === '') {
+                    throw new RuntimeException(
+                        'BX2 search URL is not configured.'
+                    );
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | BX2 Project Search
+                |--------------------------------------------------------------------------
+                */
+
+                $response = Http::withToken(
+                    $accessToken
+                )
+                    ->acceptJson()
+                    ->asJson()
+                    ->timeout(60)
+                    ->post(
+                        $searchUrl . '?page=' . $page,
+                        $payload
+                    );
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | API Authentication Error
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                $response->status() === 401
+                ||
+                $response->status() === 403
+            ) {
 
                 Log::error(
-                    'BX1 API authentication failed.',
+                    strtoupper($source) .
+                    ' project API authentication failed.',
                     [
+                        'status' =>
+                            $response->status(),
+
                         'response' =>
                             $response->body(),
                     ]
@@ -201,21 +320,31 @@ class Bx1ProjectController extends Controller
                     'success' => false,
 
                     'message' =>
-                        'BX1 authentication failed. Check BX1_API_TOKEN.',
-                ], 401);
+                        strtoupper($source) .
+                        ' project API authentication failed.',
+
+                    'api_status' =>
+                        $response->status(),
+
+                    'api_response' =>
+                        $response->json()
+                        ?: $response->body(),
+
+                ], $response->status());
             }
 
 
             /*
             |--------------------------------------------------------------------------
-            | BX1 API Error
+            | Other API Error
             |--------------------------------------------------------------------------
             */
 
             if ($response->failed()) {
 
                 Log::error(
-                    'BX1 project API failed.',
+                    strtoupper($source) .
+                    ' project API failed.',
                     [
                         'status' =>
                             $response->status(),
@@ -233,12 +362,13 @@ class Bx1ProjectController extends Controller
                     'success' => false,
 
                     'message' =>
-                        'BX1 API returned an error.',
+                        strtoupper($source) .
+                        ' project API returned an error.',
 
-                    'bx1_status' =>
+                    'api_status' =>
                         $response->status(),
 
-                    'bx1_response' =>
+                    'api_response' =>
                         $response->json()
                         ?: $response->body(),
 
@@ -248,29 +378,157 @@ class Bx1ProjectController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | BX1 Response
+            | API Response
             |--------------------------------------------------------------------------
             */
 
             $result = $response->json();
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Projects
+            |--------------------------------------------------------------------------
+            */
+
+            $projects =
+                $result['data']
+                ?? $result['projects']
+                ?? [];
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Optional Local Search
+            |--------------------------------------------------------------------------
+            |
+            | If the public API does not provide a documented text-search
+            | parameter, search the projects returned on the current page.
+            |
+            */
+
+            if (
+                $search !== ''
+                &&
+                $searchKey === ''
+            ) {
+
+                $needle =
+                    mb_strtolower($search);
+
+
+                $projects = collect($projects)
+                    ->filter(
+                        function ($project) use ($needle) {
+
+                            $name =
+                                mb_strtolower(
+                                    (string) (
+                                        $project['name']
+                                        ?? $project['project_name']
+                                        ?? ''
+                                    )
+                                );
+
+                            $city =
+                                mb_strtolower(
+                                    (string) (
+                                        $project['city']
+                                        ?? ''
+                                    )
+                                );
+
+                            $state =
+                                mb_strtolower(
+                                    (string) (
+                                        $project['state']
+                                        ?? ''
+                                    )
+                                );
+
+                            $region =
+                                mb_strtolower(
+                                    (string) (
+                                        $project['region']
+                                        ?? ''
+                                    )
+                                );
+
+                            return
+                                str_contains(
+                                    $name,
+                                    $needle
+                                )
+                                ||
+                                str_contains(
+                                    $city,
+                                    $needle
+                                )
+                                ||
+                                str_contains(
+                                    $state,
+                                    $needle
+                                )
+                                ||
+                                str_contains(
+                                    $region,
+                                    $needle
+                                );
+                        }
+                    )
+                    ->values()
+                    ->all();
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Pagination Metadata
+            |--------------------------------------------------------------------------
+            */
+
+            $meta =
+                $result['meta']
+                ?? [
+                    'current_page' => $page,
+                    'last_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => count($projects),
+                ];
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Return to React
+            |--------------------------------------------------------------------------
+            */
+
             return response()->json([
                 'success' => true,
 
+                'source' =>
+                    $source,
+
+                'days' =>
+                    $days,
+
+                'date_range' => [
+                    'start_date' =>
+                        $startDate,
+
+                    'end_date' =>
+                        $endDate,
+                ],
+
                 'data' =>
-                    $result['data'] ?? [],
+                    $projects,
 
                 'links' =>
-                    $result['links'] ?? [],
+                    $result['links']
+                    ?? [],
 
                 'meta' =>
-                    $result['meta'] ?? [
-                        'current_page' => $page,
-                        'last_page' => 1,
-                        'per_page' => $perPage,
-                        'total' => 0,
-                    ],
+                    $meta,
             ]);
 
         } catch (
@@ -284,7 +542,8 @@ class Bx1ProjectController extends Controller
             */
 
             Log::error(
-                'BX1 connection failed.',
+                strtoupper($source) .
+                ' API connection failed.',
                 [
                     'message' =>
                         $e->getMessage(),
@@ -296,7 +555,9 @@ class Bx1ProjectController extends Controller
                 'success' => false,
 
                 'message' =>
-                    'CMS could not connect to the BX1 server.',
+                    'CMS could not connect to the ' .
+                    strtoupper($source) .
+                    ' server.',
 
                 'error' =>
                     app()->environment('local')
@@ -304,6 +565,37 @@ class Bx1ProjectController extends Controller
                         : null,
 
             ], 503);
+
+        } catch (RuntimeException $e) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Configuration / Authentication Error
+            |--------------------------------------------------------------------------
+            */
+
+            Log::error(
+                strtoupper($source) .
+                ' API runtime error.',
+                [
+                    'message' =>
+                        $e->getMessage(),
+                ]
+            );
+
+
+            return response()->json([
+                'success' => false,
+
+                'message' =>
+                    $e->getMessage(),
+
+                'error' =>
+                    app()->environment('local')
+                        ? $e->getMessage()
+                        : null,
+
+            ], 500);
 
         } catch (\Throwable $e) {
 
@@ -314,7 +606,8 @@ class Bx1ProjectController extends Controller
             */
 
             Log::error(
-                'BX1 project API exception.',
+                strtoupper($source) .
+                ' API exception.',
                 [
                     'message' =>
                         $e->getMessage(),
@@ -332,7 +625,9 @@ class Bx1ProjectController extends Controller
                 'success' => false,
 
                 'message' =>
-                    'Unexpected error while retrieving BX1 projects.',
+                    'Unexpected error while retrieving ' .
+                    strtoupper($source) .
+                    ' projects.',
 
                 'error' =>
                     app()->environment('local')
@@ -341,5 +636,296 @@ class Bx1ProjectController extends Controller
 
             ], 500);
         }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get BX1 Access Token
+    |--------------------------------------------------------------------------
+    |
+    | Postman working request:
+    |
+    | GET:
+    | https://api.biltrax.com/v1/get-auth-token
+    |
+    | Query Params:
+    |
+    | client_id
+    | client_secret
+    | username
+    | password
+    |
+    | Response:
+    |
+    | access_token
+    |
+    */
+
+    private function getBx1AccessToken(): string
+    {
+        $authUrl =
+            (string) config(
+                'services.bx1.auth_url'
+            );
+
+        $clientId =
+            (string) config(
+                'services.bx1.client_id'
+            );
+
+        $clientSecret =
+            (string) config(
+                'services.bx1.client_secret'
+            );
+
+        $username =
+            (string) config(
+                'services.bx1.username'
+            );
+
+        $password =
+            (string) config(
+                'services.bx1.password'
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Configuration
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $authUrl === ''
+            ||
+            $clientId === ''
+            ||
+            $clientSecret === ''
+            ||
+            $username === ''
+            ||
+            $password === ''
+        ) {
+
+            throw new RuntimeException(
+                'BX1 authentication configuration is incomplete.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | BX1 Authentication
+        |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        |
+        | Credentials are QUERY PARAMETERS.
+        |
+        | They are NOT:
+        |
+        | JSON body
+        | form body
+        | Authorization header
+        |
+        */
+
+        $response = Http::acceptJson()
+            ->timeout(30)
+            ->get(
+                $authUrl,
+                [
+                    'client_id' =>
+                        $clientId,
+
+                    'client_secret' =>
+                        $clientSecret,
+
+                    'username' =>
+                        $username,
+
+                    'password' =>
+                        $password,
+                ]
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Authentication Failed
+        |--------------------------------------------------------------------------
+        */
+
+        if ($response->failed()) {
+
+            throw new RuntimeException(
+                'BX1 authentication failed. HTTP ' .
+                $response->status() .
+                ': ' .
+                $response->body()
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get access_token
+        |--------------------------------------------------------------------------
+        */
+
+        $accessToken =
+            $response->json(
+                'access_token'
+            );
+
+
+        if (!$accessToken) {
+
+            throw new RuntimeException(
+                'BX1 authentication succeeded but access_token was not returned.'
+            );
+        }
+
+
+        return (string) $accessToken;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get BX2 Access Token
+    |--------------------------------------------------------------------------
+    |
+    | BX2:
+    |
+    | GET:
+    | https://bx2api.biltrax.com/v1/get-user-auth-token
+    |
+    | Query Params:
+    |
+    | client_id
+    | client_secret
+    | username
+    | password
+    |
+    */
+
+    private function getBx2AccessToken(): string
+    {
+        $authUrl =
+            (string) config(
+                'services.bx2.auth_url'
+            );
+
+        $clientId =
+            (string) config(
+                'services.bx2.client_id'
+            );
+
+        $clientSecret =
+            (string) config(
+                'services.bx2.client_secret'
+            );
+
+        $username =
+            (string) config(
+                'services.bx2.username'
+            );
+
+        $password =
+            (string) config(
+                'services.bx2.password'
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Configuration
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $authUrl === ''
+            ||
+            $clientId === ''
+            ||
+            $clientSecret === ''
+            ||
+            $username === ''
+            ||
+            $password === ''
+        ) {
+
+            throw new RuntimeException(
+                'BX2 authentication configuration is incomplete.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | BX2 Authentication
+        |--------------------------------------------------------------------------
+        */
+
+        $response = Http::acceptJson()
+            ->timeout(30)
+            ->get(
+                $authUrl,
+                [
+                    'client_id' =>
+                        $clientId,
+
+                    'client_secret' =>
+                        $clientSecret,
+
+                    'username' =>
+                        $username,
+
+                    'password' =>
+                        $password,
+                ]
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Authentication Failed
+        |--------------------------------------------------------------------------
+        */
+
+        if ($response->failed()) {
+
+            throw new RuntimeException(
+                'BX2 authentication failed. HTTP ' .
+                $response->status() .
+                ': ' .
+                $response->body()
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get access_token
+        |--------------------------------------------------------------------------
+        */
+
+        $accessToken =
+            $response->json(
+                'access_token'
+            );
+
+
+        if (!$accessToken) {
+
+            throw new RuntimeException(
+                'BX2 authentication succeeded but access_token was not returned.'
+            );
+        }
+
+
+        return (string) $accessToken;
     }
 }
