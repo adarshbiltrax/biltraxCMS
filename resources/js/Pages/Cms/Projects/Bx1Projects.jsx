@@ -46,6 +46,8 @@ function ArrowLeftIcon() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         >
             <path d="M19 12H5" />
             <path d="m12 19-7-7 7-7" />
@@ -63,6 +65,8 @@ function SearchIcon() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         >
             <circle
                 cx="11"
@@ -85,6 +89,8 @@ function RefreshIcon() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         >
             <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5" />
 
@@ -103,6 +109,8 @@ function ProjectIcon() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         >
             <rect
                 x="3"
@@ -113,6 +121,51 @@ function ProjectIcon() {
             />
 
             <path d="M8 8h8M8 12h8M8 16h5" />
+        </svg>
+    );
+}
+
+
+function WarningIcon() {
+    return (
+        <svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <circle
+                cx="12"
+                cy="12"
+                r="10"
+            />
+
+            <path d="M12 8v4" />
+
+            <path d="M12 16h.01" />
+        </svg>
+    );
+}
+
+
+function CloseIcon() {
+    return (
+        <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
         </svg>
     );
 }
@@ -197,6 +250,118 @@ export default function Bx1Projects({
         selectedId,
         setSelectedId,
     ] = useState(null);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Duplicate Modal State
+    |--------------------------------------------------------------------------
+    */
+
+    const [
+        duplicateModal,
+        setDuplicateModal,
+    ] = useState({
+        open: false,
+        message: '',
+        projectName: '',
+        sourceProjectId: '',
+    });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Open Duplicate Modal
+    |--------------------------------------------------------------------------
+    */
+
+    function openDuplicateModal(
+        message,
+        project
+    ) {
+
+        setDuplicateModal({
+            open: true,
+
+            message:
+                message
+                ||
+                'This project has already been added to the CMS project list.',
+
+            projectName:
+                project?.name
+                ??
+                project?.project_name
+                ??
+                '',
+
+            sourceProjectId:
+                project?.id
+                ??
+                project?.project_id
+                ??
+                '',
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Close Duplicate Modal
+    |--------------------------------------------------------------------------
+    */
+
+    function closeDuplicateModal() {
+
+        setDuplicateModal({
+            open: false,
+            message: '',
+            projectName: '',
+            sourceProjectId: '',
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Close Modal With Escape
+    |--------------------------------------------------------------------------
+    */
+
+    useEffect(
+        () => {
+
+            if (!duplicateModal.open) {
+                return;
+            }
+
+
+            function handleKeyDown(e) {
+
+                if (e.key === 'Escape') {
+
+                    closeDuplicateModal();
+                }
+            }
+
+
+            window.addEventListener(
+                'keydown',
+                handleKeyDown
+            );
+
+
+            return () => {
+
+                window.removeEventListener(
+                    'keydown',
+                    handleKeyDown
+                );
+            };
+
+        },
+        [duplicateModal.open]
+    );
 
 
     /*
@@ -365,6 +530,8 @@ export default function Bx1Projects({
 
         setSelectedId(null);
 
+        setError('');
+
 
         loadProjects(
             1,
@@ -387,6 +554,8 @@ export default function Bx1Projects({
 
         setSelectedId(null);
 
+        setError('');
+
 
         loadProjects(
             1,
@@ -401,37 +570,18 @@ export default function Bx1Projects({
     |--------------------------------------------------------------------------
     | Select Project
     |--------------------------------------------------------------------------
-    |
-    | IMPORTANT:
-    |
-    | OLD FLOW:
-    |
-    | router.get('/cms/projects/create', {
-    |     source,
-    |     source_project_id,
-    |     project_name,
-    |     ...
-    | });
-    |
-    | That created:
-    |
-    | /cms/projects/create?source=bx1&project_name=...
-    |
-    |
-    | NEW FLOW:
-    |
-    | POST /cms/projects/import
-    |
-    | Laravel stores the selected project temporarily in session and redirects
-    | to:
-    |
-    | /cms/projects/create
-    |
-    | Therefore no project information appears in the browser URL.
-    |
     */
 
     function selectProject(project) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Previous General Error
+        |--------------------------------------------------------------------------
+        */
+
+        setError('');
+
 
         /*
         |--------------------------------------------------------------------------
@@ -482,11 +632,6 @@ export default function Bx1Projects({
         |--------------------------------------------------------------------------
         | Project Stage
         |--------------------------------------------------------------------------
-        |
-        | BX1 public API returns latest_status.
-        |
-        | Fallbacks are retained for BX2.
-        |
         */
 
         const projectStage =
@@ -574,118 +719,119 @@ export default function Bx1Projects({
         |--------------------------------------------------------------------------
         */
 
-   router.post(
-    '/cms/projects/import',
+        router.post(
+            '/cms/projects/import',
 
-    {
-        source:
-            source,
+            {
+                source:
+                    source,
 
-        source_project_id:
-            sourceProjectId,
+                source_project_id:
+                    sourceProjectId,
 
-        project_name:
-            projectName,
+                project_name:
+                    projectName,
 
-        sector:
-            sector,
+                sector:
+                    sector,
 
-        project_type:
-            projectType,
+                project_type:
+                    projectType,
 
-        project_stage:
-            projectStage,
+                project_stage:
+                    projectStage,
 
-        city:
-            city,
+                city:
+                    city,
 
-        state:
-            state,
+                state:
+                    state,
 
-        region:
-            region,
+                region:
+                    region,
 
-        location:
-            location,
-    },
+                location:
+                    location,
+            },
 
-    {
-        preserveScroll: true,
+            {
+                preserveScroll: true,
 
-        preserveState: true,
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Import Validation Error
-        |--------------------------------------------------------------------------
-        */
-
-        onError: (errors) => {
-
-            console.error(
-                'Project import error:',
-                errors
-            );
+                preserveState: true,
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Reset Select Button
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | Error
+                |--------------------------------------------------------------------------
+                */
 
-            setSelectedId(
-                null
-            );
+                onError: (errors) => {
+
+                    console.error(
+                        'Project import error:',
+                        errors
+                    );
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Duplicate Project
-            |--------------------------------------------------------------------------
-            */
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Reset Select Button
+                    |--------------------------------------------------------------------------
+                    */
 
-            if (
-                errors?.source_project_id
-            ) {
+                    setSelectedId(
+                        null
+                    );
 
-                setError(
-                    errors.source_project_id
-                );
 
-                return;
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Duplicate Project
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (
+                        errors?.source_project_id
+                    ) {
+
+                        openDuplicateModal(
+                            errors.source_project_id,
+                            project
+                        );
+
+                        return;
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Other Validation Error
+                    |--------------------------------------------------------------------------
+                    */
+
+                    const firstError =
+                        Object.values(
+                            errors || {}
+                        )[0];
+
+
+                    if (firstError) {
+
+                        setError(
+                            String(firstError)
+                        );
+
+                        return;
+                    }
+
+
+                    setError(
+                        'Unable to open the selected project.'
+                    );
+                },
             }
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Other Validation Error
-            |--------------------------------------------------------------------------
-            */
-
-            const firstError =
-                Object.values(
-                    errors || {}
-                )[0];
-
-
-            if (firstError) {
-
-                setError(
-                    String(firstError)
-                );
-
-                return;
-            }
-
-
-            setError(
-                'Unable to open the selected project.'
-            );
-        },
-    }
-);
+        );
     }
 
 
@@ -1031,6 +1177,271 @@ export default function Bx1Projects({
                     cursor: not-allowed;
                 }
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Duplicate Project Modal
+                |--------------------------------------------------------------------------
+                */
+
+                .bx-modal-overlay {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 9999;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    padding: 20px;
+
+                    background: rgba(15, 23, 42, .48);
+
+                    backdrop-filter: blur(3px);
+
+                    animation:
+                        bxOverlayIn .18s ease;
+                }
+
+
+                .bx-modal {
+                    position: relative;
+
+                    width: 100%;
+                    max-width: 440px;
+
+                    overflow: hidden;
+
+                    background: #ffffff;
+
+                    border:
+                        1px solid rgba(
+                            16,
+                            24,
+                            40,
+                            .08
+                        );
+
+                    border-radius: 16px;
+
+                    box-shadow:
+                        0 24px 60px
+                        rgba(
+                            16,
+                            24,
+                            40,
+                            .22
+                        );
+
+                    animation:
+                        bxModalIn
+                        .22s ease;
+                }
+
+
+                .bx-modal-close {
+                    position: absolute;
+
+                    top: 14px;
+                    right: 14px;
+
+                    width: 34px;
+                    height: 34px;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    padding: 0;
+
+                    border: 0;
+
+                    border-radius: 8px;
+
+                    background: transparent;
+
+                    color: #667085;
+
+                    cursor: pointer;
+
+                    transition:
+                        background .15s ease,
+                        color .15s ease;
+                }
+
+
+                .bx-modal-close:hover {
+                    background: #f2f4f7;
+                    color: #101828;
+                }
+
+
+                .bx-modal-body {
+                    padding:
+                        30px
+                        30px
+                        24px;
+                }
+
+
+                .bx-modal-icon {
+                    width: 52px;
+                    height: 52px;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    margin-bottom: 18px;
+
+                    border-radius: 50%;
+
+                    background: #fff1f3;
+
+                    color: #c0122f;
+                }
+
+
+                .bx-modal-title {
+                    padding-right: 35px;
+
+                    margin-bottom: 8px;
+
+                    color: #101828;
+
+                    font-size: 18px;
+
+                    line-height: 1.35;
+
+                    font-weight: 700;
+                }
+
+
+                .bx-modal-message {
+                    color: #667085;
+
+                    font-size: 13px;
+
+                    line-height: 1.6;
+                }
+
+
+                .bx-modal-project {
+                    margin-top: 18px;
+
+                    padding: 13px 14px;
+
+                    border:
+                        1px solid #eaecf0;
+
+                    border-radius: 10px;
+
+                    background: #f9fafb;
+                }
+
+
+                .bx-modal-project-name {
+                    color: #344054;
+
+                    font-size: 13px;
+
+                    line-height: 1.45;
+
+                    font-weight: 650;
+                }
+
+
+                .bx-modal-project-id {
+                    margin-top: 4px;
+
+                    color: #98a2b3;
+
+                    font-size: 11px;
+                }
+
+
+                .bx-modal-footer {
+                    padding:
+                        16px
+                        30px
+                        22px;
+
+                    display: flex;
+
+                    justify-content: flex-end;
+                }
+
+
+                .bx-modal-ok {
+                    min-width: 92px;
+
+                    height: 40px;
+
+                    padding: 0 18px;
+
+                    border:
+                        1px solid #c0122f;
+
+                    border-radius: 9px;
+
+                    background: #c0122f;
+
+                    color: #ffffff;
+
+                    font-family: inherit;
+
+                    font-size: 13px;
+
+                    font-weight: 650;
+
+                    cursor: pointer;
+
+                    transition:
+                        background .15s ease,
+                        border-color .15s ease,
+                        transform .15s ease;
+                }
+
+
+                .bx-modal-ok:hover {
+                    background: #a90f29;
+                    border-color: #a90f29;
+                    transform: translateY(-1px);
+                }
+
+
+                @keyframes bxOverlayIn {
+
+                    from {
+                        opacity: 0;
+                    }
+
+                    to {
+                        opacity: 1;
+                    }
+                }
+
+
+                @keyframes bxModalIn {
+
+                    from {
+                        opacity: 0;
+
+                        transform:
+                            translateY(8px)
+                            scale(.98);
+                    }
+
+                    to {
+                        opacity: 1;
+
+                        transform:
+                            translateY(0)
+                            scale(1);
+                    }
+                }
+
+
                 @media (max-width: 760px) {
 
                     .bx-search {
@@ -1044,6 +1455,32 @@ export default function Bx1Projects({
                     .bx-pagination {
                         flex-direction: column;
                         align-items: flex-start;
+                    }
+                }
+
+
+                @media (max-width: 520px) {
+
+                    .bx-modal-overlay {
+                        padding: 14px;
+                    }
+
+                    .bx-modal-body {
+                        padding:
+                            25px
+                            20px
+                            20px;
+                    }
+
+                    .bx-modal-footer {
+                        padding:
+                            14px
+                            20px
+                            20px;
+                    }
+
+                    .bx-modal-ok {
+                        width: 100%;
                     }
                 }
 
@@ -1466,7 +1903,7 @@ export default function Bx1Projects({
                                                             {selectedId
                                                                 ===
                                                                 projectId
-                                                                ? 'Opening...'
+                                                                ? 'Checking...'
                                                                 : 'Select'}
 
                                                         </button>
@@ -1593,6 +2030,135 @@ export default function Bx1Projects({
                 </div>
 
             </div>
+
+
+            {/* DUPLICATE PROJECT MODAL */}
+
+            {duplicateModal.open && (
+
+                <div
+                    className="bx-modal-overlay"
+                    role="presentation"
+                    onMouseDown={
+                        (e) => {
+
+                            if (
+                                e.target
+                                ===
+                                e.currentTarget
+                            ) {
+
+                                closeDuplicateModal();
+                            }
+                        }
+                    }
+                >
+
+                    <div
+                        className="bx-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="duplicate-project-title"
+                    >
+
+                        {/* CLOSE */}
+
+                        <button
+                            type="button"
+                            className="bx-modal-close"
+                            onClick={
+                                closeDuplicateModal
+                            }
+                            aria-label="Close"
+                        >
+                            <CloseIcon />
+                        </button>
+
+
+                        {/* BODY */}
+
+                        <div className="bx-modal-body">
+
+                            <div className="bx-modal-icon">
+                                <WarningIcon />
+                            </div>
+
+
+                            <div
+                                id="duplicate-project-title"
+                                className="bx-modal-title"
+                            >
+                                Project Already Added
+                            </div>
+
+
+                            <div className="bx-modal-message">
+
+                                {duplicateModal.message}
+
+                            </div>
+
+
+                            {(duplicateModal.projectName
+                                ||
+                                duplicateModal.sourceProjectId) && (
+
+                                <div className="bx-modal-project">
+
+                                    {duplicateModal.projectName && (
+
+                                        <div className="bx-modal-project-name">
+
+                                            {duplicateModal.projectName}
+
+                                        </div>
+
+                                    )}
+
+
+                                    {duplicateModal.sourceProjectId && (
+
+                                        <div className="bx-modal-project-id">
+
+                                            {source.toUpperCase()}
+                                            {' '}
+                                            Project ID:
+                                            {' '}
+                                            {duplicateModal.sourceProjectId}
+
+                                        </div>
+
+                                    )}
+
+                                </div>
+
+                            )}
+
+                        </div>
+
+
+                        {/* FOOTER */}
+
+                        <div className="bx-modal-footer">
+
+                            <button
+                                type="button"
+                                className="bx-modal-ok"
+                                onClick={
+                                    closeDuplicateModal
+                                }
+                                autoFocus
+                            >
+                                OK
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
 
         </CmsLayout>
     );

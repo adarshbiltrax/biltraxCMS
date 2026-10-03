@@ -107,17 +107,6 @@ class ProjectController extends Controller
     |--------------------------------------------------------------------------
     | Prepare BX1 / BX2 Import
     |--------------------------------------------------------------------------
-    |
-    | This endpoint receives the selected API project through POST.
-    |
-    | The selected project is stored temporarily in the Laravel session.
-    |
-    | Then the browser is redirected to:
-    |
-    | /cms/projects/create
-    |
-    | Therefore project information does NOT appear in the URL.
-    |
     */
 
     public function prepareImport(Request $request)
@@ -162,24 +151,31 @@ class ProjectController extends Controller
 
 
         /*
-|--------------------------------------------------------------------------
-| Prevent Duplicate Source Project
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | Prevent Duplicate Source Project
+        |--------------------------------------------------------------------------
+        |
+        | If this source_project_id already exists in the CMS project table,
+        | return a validation error.
+        |
+        | Bx1Projects.jsx catches this specific error and displays it inside
+        | the "Project Already Added" modal.
+        |
+        */
 
-$existingProject = WebsiteProject::where(
-    'source_project_id',
-    $validated['source_project_id']
-)->first();
+        $existingProject = WebsiteProject::where(
+            'source_project_id',
+            $validated['source_project_id']
+        )->first();
 
 
-if ($existingProject) {
+        if ($existingProject) {
 
-    return back()->withErrors([
-        'source_project_id' =>
-            'This project has already been added to the CMS project list.',
-    ]);
-}
+            return back()->withErrors([
+                'source_project_id' =>
+                    'This project has already been added to the CMS project list.',
+            ]);
+        }
 
 
         /*
@@ -272,11 +268,6 @@ if ($existingProject) {
             |--------------------------------------------------------------------------
             | Import Source
             |--------------------------------------------------------------------------
-            |
-            | This is only passed to Form.jsx.
-            |
-            | It is NOT inserted into website_projects.
-            |
             */
 
             '_source' => $source,
@@ -287,14 +278,6 @@ if ($existingProject) {
         |--------------------------------------------------------------------------
         | Store Import Temporarily In Session
         |--------------------------------------------------------------------------
-        |
-        | We intentionally use session()->put().
-        |
-        | create() below will use session()->pull(), which:
-        |
-        | 1. reads the project
-        | 2. removes it from the session
-        |
         */
 
         $request->session()->put(
@@ -328,19 +311,6 @@ if ($existingProject) {
         |--------------------------------------------------------------------------
         | Get Imported Project
         |--------------------------------------------------------------------------
-        |
-        | If the user arrived after selecting BX1/BX2:
-        |
-        |     $project = imported API project
-        |
-        | If the user directly opened:
-        |
-        |     /cms/projects/create
-        |
-        | then:
-        |
-        |     $project = null
-        |
         */
 
         $project = $request
@@ -370,6 +340,34 @@ if ($existingProject) {
         $data = $this->validateProject(
             $request
         );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Final Duplicate Protection
+        |--------------------------------------------------------------------------
+        |
+        | This is a second protection layer.
+        |
+        | Even if somebody manually submits /cms/projects, the same
+        | source_project_id cannot be inserted twice through this controller.
+        |
+        */
+
+        if (
+            !empty($data['source_project_id'])
+            &&
+            WebsiteProject::where(
+                'source_project_id',
+                $data['source_project_id']
+            )->exists()
+        ) {
+
+            return back()->withErrors([
+                'source_project_id' =>
+                    'This project has already been added to the CMS project list.',
+            ]);
+        }
 
 
         WebsiteProject::create(
@@ -421,6 +419,37 @@ if ($existingProject) {
         $data = $this->validateProject(
             $request
         );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent Duplicate Source Project During Edit
+        |--------------------------------------------------------------------------
+        |
+        | Ignore the current CMS record itself.
+        |
+        */
+
+        if (
+            !empty($data['source_project_id'])
+            &&
+            WebsiteProject::where(
+                'source_project_id',
+                $data['source_project_id']
+            )
+            ->where(
+                'id',
+                '!=',
+                $project->id
+            )
+            ->exists()
+        ) {
+
+            return back()->withErrors([
+                'source_project_id' =>
+                    'This source project ID is already assigned to another CMS project.',
+            ]);
+        }
 
 
         $project->update(
@@ -505,12 +534,6 @@ if ($existingProject) {
             'summary' =>
                 'nullable|string',
 
-            /*
-            |--------------------------------------------------------------------------
-            | CMS Publication Status
-            |--------------------------------------------------------------------------
-            */
-
             'status' =>
                 'required|in:draft,published',
 
@@ -527,7 +550,7 @@ if ($existingProject) {
 
         /*
         |--------------------------------------------------------------------------
-        | Normalize Sort Order
+        | Normalize Values
         |--------------------------------------------------------------------------
         */
 
@@ -535,12 +558,6 @@ if ($existingProject) {
             $data['sort_order'] ?? 0
         );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Normalize Featured Flag
-        |--------------------------------------------------------------------------
-        */
 
         $data['is_featured'] =
             $request->boolean(
