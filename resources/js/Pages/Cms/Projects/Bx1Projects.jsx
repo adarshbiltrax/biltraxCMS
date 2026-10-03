@@ -1,34 +1,10 @@
-import React, {
+import React, { useEffect, useState } from "react";
 
-    useEffect,
+import { Head, Link, router } from "@inertiajs/react";
 
-    useState,
+import axios from "axios";
 
-} from 'react';
-
-
-
-import {
-
-    Head,
-
-    Link,
-
-    router,
-
-} from '@inertiajs/react';
-
-
-
-import axios from 'axios';
-
-
-
-import CmsLayout from '../../../Layouts/CmsLayout';
-
-
-
-
+import CmsLayout from "../../../Layouts/CmsLayout";
 
 /*
 
@@ -40,10 +16,7 @@ import CmsLayout from '../../../Layouts/CmsLayout';
 
 */
 
-
-
 const DAY_OPTIONS = [
-
     7,
 
     15,
@@ -57,12 +30,7 @@ const DAY_OPTIONS = [
     90,
 
     120,
-
 ];
-
-
-
-
 
 /*
 
@@ -74,275 +42,121 @@ const DAY_OPTIONS = [
 
 */
 
-
-
 function ArrowLeftIcon() {
-
     return (
-
         <svg
-
             width="17"
-
             height="17"
-
             viewBox="0 0 24 24"
-
             fill="none"
-
             stroke="currentColor"
-
             strokeWidth="2"
-
             strokeLinecap="round"
-
             strokeLinejoin="round"
-
         >
-
             <path d="M19 12H5" />
 
             <path d="m12 19-7-7 7-7" />
-
         </svg>
-
     );
-
 }
-
-
-
-
 
 function SearchIcon() {
-
     return (
-
         <svg
-
             width="18"
-
             height="18"
-
             viewBox="0 0 24 24"
-
             fill="none"
-
             stroke="currentColor"
-
             strokeWidth="2"
-
             strokeLinecap="round"
-
             strokeLinejoin="round"
-
         >
-
-            <circle
-
-                cx="11"
-
-                cy="11"
-
-                r="8"
-
-            />
-
-
+            <circle cx="11" cy="11" r="8" />
 
             <path d="m21 21-4.35-4.35" />
-
         </svg>
-
     );
-
 }
-
-
-
-
 
 function RefreshIcon() {
-
     return (
-
         <svg
-
             width="17"
-
             height="17"
-
             viewBox="0 0 24 24"
-
             fill="none"
-
             stroke="currentColor"
-
             strokeWidth="2"
-
             strokeLinecap="round"
-
             strokeLinejoin="round"
-
         >
-
             <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5" />
 
-
-
             <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5" />
-
         </svg>
-
     );
-
 }
-
-
-
-
 
 function ProjectIcon() {
-
     return (
-
         <svg
-
             width="20"
-
             height="20"
-
             viewBox="0 0 24 24"
-
             fill="none"
-
             stroke="currentColor"
-
             strokeWidth="2"
-
             strokeLinecap="round"
-
             strokeLinejoin="round"
-
         >
-
-            <rect
-
-                x="3"
-
-                y="3"
-
-                width="18"
-
-                height="18"
-
-                rx="2"
-
-            />
-
-
+            <rect x="3" y="3" width="18" height="18" rx="2" />
 
             <path d="M8 8h8M8 12h8M8 16h5" />
-
         </svg>
-
     );
-
 }
 
-
-
-
-
 function WarningIcon() {
-
     return (
-
         <svg
-
             width="26"
-
             height="26"
-
             viewBox="0 0 24 24"
-
             fill="none"
-
             stroke="currentColor"
-
             strokeWidth="2"
-
             strokeLinecap="round"
-
             strokeLinejoin="round"
-
         >
-
-            <circle
-
-                cx="12"
-
-                cy="12"
-
-                r="10"
-
-            />
-
-
+            <circle cx="12" cy="12" r="10" />
 
             <path d="M12 8v4" />
 
-
-
             <path d="M12 16h.01" />
-
         </svg>
-
     );
-
 }
 
-
-
-
-
 function CloseIcon() {
-
     return (
-
         <svg
-
             width="18"
-
             height="18"
-
             viewBox="0 0 24 24"
-
             fill="none"
-
             stroke="currentColor"
-
             strokeWidth="2"
-
             strokeLinecap="round"
-
             strokeLinejoin="round"
-
         >
-
             <path d="M18 6 6 18" />
 
             <path d="m6 6 12 12" />
-
         </svg>
-
     );
-
 }
-
-
-
-
 
 /*
 
@@ -354,20 +168,13 @@ function CloseIcon() {
 
 */
 
-
-
 export default function Bx1Projects({
-
-    defaultSource = 'bx1',
+    defaultSource = "bx1",
 
     defaultDays = 120,
 
     dayOptions = DAY_OPTIONS,
-
 }) {
-
-
-
     /*
 
     |--------------------------------------------------------------------------
@@ -378,28 +185,9 @@ export default function Bx1Projects({
 
     */
 
+    const [projects, setProjects] = useState([]);
 
-
-    const [
-
-        projects,
-
-        setProjects,
-
-    ] = useState([]);
-
-
-
-
-
-    const [
-
-        meta,
-
-        setMeta,
-
-    ] = useState({
-
+    const [meta, setMeta] = useState({
         current_page: 1,
 
         last_page: 1,
@@ -407,114 +195,23 @@ export default function Bx1Projects({
         per_page: 50,
 
         total: 0,
-
     });
 
+    const [query, setQuery] = useState("");
 
+    const [source, setSource] = useState(defaultSource);
 
+    const [days, setDays] = useState(defaultDays);
 
+    const visibleDayOptions = source === "bx2" ? [7, 15, 30] : dayOptions;
 
-    const [
+    const [dateRange, setDateRange] = useState(null);
 
-        query,
+    const [loading, setLoading] = useState(true);
 
-        setQuery,
+    const [error, setError] = useState("");
 
-    ] = useState('');
-
-
-
-
-
-    const [
-
-        source,
-
-        setSource,
-
-    ] = useState(
-
-        defaultSource
-
-    );
-
-
-
-
-
-    const [
-
-        days,
-
-        setDays,
-
-    ] = useState(
-
-        defaultDays
-
-    );
-
-
-
-    const visibleDayOptions =
-
-        source === 'bx2'
-
-            ? [7, 15, 30]
-
-            : dayOptions;
-
-
-
-
-
-    const [
-
-        dateRange,
-
-        setDateRange,
-
-    ] = useState(null);
-
-
-
-
-
-    const [
-
-        loading,
-
-        setLoading,
-
-    ] = useState(true);
-
-
-
-
-
-    const [
-
-        error,
-
-        setError,
-
-    ] = useState('');
-
-
-
-
-
-    const [
-
-        selectedId,
-
-        setSelectedId,
-
-    ] = useState(null);
-
-
-
-
+    const [selectedId, setSelectedId] = useState(null);
 
     /*
 
@@ -526,29 +223,15 @@ export default function Bx1Projects({
 
     */
 
-
-
-    const [
-
-        duplicateModal,
-
-        setDuplicateModal,
-
-    ] = useState({
-
+    const [duplicateModal, setDuplicateModal] = useState({
         open: false,
 
-        message: '',
+        message: "",
 
-        projectName: '',
+        projectName: "",
 
-        sourceProjectId: '',
-
+        sourceProjectId: "",
     });
-
-
-
-
 
     /*
 
@@ -560,67 +243,23 @@ export default function Bx1Projects({
 
     */
 
-
-
     function openDuplicateModal(
-
         message,
 
-        project
-
+        project,
     ) {
-
-
-
         setDuplicateModal({
-
             open: true,
 
-
-
             message:
+                message ||
+                "This project has already been added to the CMS project list.",
 
-                message
+            projectName: project?.name ?? project?.project_name ?? "",
 
-                ||
-
-                'This project has already been added to the CMS project list.',
-
-
-
-            projectName:
-
-                project?.name
-
-                ??
-
-                project?.project_name
-
-                ??
-
-                '',
-
-
-
-            sourceProjectId:
-
-                project?.id
-
-                ??
-
-                project?.project_id
-
-                ??
-
-                '',
-
+            sourceProjectId: project?.id ?? project?.project_id ?? "",
         });
-
     }
-
-
-
-
 
     /*
 
@@ -632,29 +271,17 @@ export default function Bx1Projects({
 
     */
 
-
-
     function closeDuplicateModal() {
-
-
-
         setDuplicateModal({
-
             open: false,
 
-            message: '',
+            message: "",
 
-            projectName: '',
+            projectName: "",
 
-            sourceProjectId: '',
-
+            sourceProjectId: "",
         });
-
     }
-
-
-
-
 
     /*
 
@@ -666,79 +293,31 @@ export default function Bx1Projects({
 
     */
 
+    useEffect(() => {
+        if (!duplicateModal.open) {
+            return;
+        }
 
-
-    useEffect(
-
-        () => {
-
-
-
-            if (!duplicateModal.open) {
-
-                return;
-
+        function handleKeyDown(e) {
+            if (e.key === "Escape") {
+                closeDuplicateModal();
             }
+        }
 
+        window.addEventListener(
+            "keydown",
 
+            handleKeyDown,
+        );
 
+        return () => {
+            window.removeEventListener(
+                "keydown",
 
-
-            function handleKeyDown(e) {
-
-
-
-                if (e.key === 'Escape') {
-
-
-
-                    closeDuplicateModal();
-
-                }
-
-            }
-
-
-
-
-
-            window.addEventListener(
-
-                'keydown',
-
-                handleKeyDown
-
+                handleKeyDown,
             );
-
-
-
-
-
-            return () => {
-
-
-
-                window.removeEventListener(
-
-                    'keydown',
-
-                    handleKeyDown
-
-                );
-
-            };
-
-
-
-        },
-
-        [duplicateModal.open]
-
-    );
-
-
-
-
+        };
+    }, [duplicateModal.open]);
 
     /*
 
@@ -750,217 +329,69 @@ export default function Bx1Projects({
 
     */
 
-
-
     async function loadProjects(
-
         page = 1,
 
         search = query,
 
         selectedSource = source,
 
-        selectedDays = days
-
+        selectedDays = days,
     ) {
-
-
-
         setLoading(true);
 
-
-
-        setError('');
-
-
-
-
+        setError("");
 
         try {
+            const response = await axios.post(
+                "/cms/bx1/projects/search",
 
-
-
-            const response =
-
-                await axios.post(
-
-                    '/cms/bx1/projects/search',
-
-                    {
-
-                        page,
-
-
-
-                        per_page: 50,
-
-
-
-                        q: search,
-
-
-
-                        source:
-
-                            selectedSource,
-
-
-
-                        days:
-
-                            selectedDays,
-
-                    }
-
-                );
-
-
-
-
-
-            if (
-
-                !response.data?.success
-
-            ) {
-
-
-
-                throw new Error(
-
-                    response.data?.message
-
-                    ||
-
-                    'Unable to load projects.'
-
-                );
-
-            }
-
-
-
-
-
-            setProjects(
-
-                response.data.data
-
-                ||
-
-                []
-
-            );
-
-
-
-
-
-            setMeta({
-
-
-
-                current_page:
-
-                    response.data.meta?.current_page
-
-                    ||
-
+                {
                     page,
 
+                    per_page: 50,
 
+                    q: search,
 
-                last_page:
+                    source: selectedSource,
 
-                    response.data.meta?.last_page
-
-                    ||
-
-                    1,
-
-
-
-                per_page:
-
-                    response.data.meta?.per_page
-
-                    ||
-
-                    50,
-
-
-
-                total:
-
-                    response.data.meta?.total
-
-                    ||
-
-                    0,
-
-            });
-
-
-
-
-
-            setDateRange(
-
-                response.data.date_range
-
-                ||
-
-                null
-
+                    days: selectedDays,
+                },
             );
 
+            if (!response.data?.success) {
+                throw new Error(
+                    response.data?.message || "Unable to load projects.",
+                );
+            }
 
+            setProjects(response.data.data || []);
 
+            setMeta({
+                current_page: response.data.meta?.current_page || page,
+
+                last_page: response.data.meta?.last_page || 1,
+
+                per_page: response.data.meta?.per_page || 50,
+
+                total: response.data.meta?.total || 0,
+            });
+
+            setDateRange(response.data.date_range || null);
         } catch (err) {
-
-
-
             console.error(err);
-
-
-
-
 
             setProjects([]);
 
-
-
-
-
             setError(
-
-                err?.response?.data?.message
-
-                ||
-
-                err?.message
-
-                ||
-
-                `Unable to connect to ${selectedSource.toUpperCase()}.`
-
+                err?.response?.data?.message ||
+                    err?.message ||
+                    `Unable to connect to ${selectedSource.toUpperCase()}.`,
             );
-
-
-
         } finally {
-
-
-
             setLoading(false);
-
         }
-
     }
-
-
-
-
 
     /*
 
@@ -972,37 +403,17 @@ export default function Bx1Projects({
 
     */
 
+    useEffect(() => {
+        loadProjects(
+            1,
 
+            "",
 
-    useEffect(
+            defaultSource,
 
-        () => {
-
-
-
-            loadProjects(
-
-                1,
-
-                '',
-
-                defaultSource,
-
-                defaultDays
-
-            );
-
-
-
-        },
-
-        []
-
-    );
-
-
-
-
+            defaultDays,
+        );
+    }, []);
 
     /*
 
@@ -1014,35 +425,19 @@ export default function Bx1Projects({
 
     */
 
-
-
     function submitSearch(e) {
-
-
-
         e.preventDefault();
 
-
-
-
-
         loadProjects(
-
             1,
 
             query.trim(),
 
             source,
 
-            days
-
+            days,
         );
-
     }
-
-
-
-
 
     /*
 
@@ -1054,61 +449,29 @@ export default function Bx1Projects({
 
     */
 
-
-
     function changeSource(next) {
-
-
-
-        const nextDays =
-
-            next === 'bx2'
-
-                ? 30
-
-                : days;
-
-
+        const nextDays = next === "bx2" ? 30 : days;
 
         setSource(next);
 
-
-
         setDays(nextDays);
 
-
-
-        setQuery('');
-
-
+        setQuery("");
 
         setSelectedId(null);
 
-
-
-        setError('');
-
-
-
-
+        setError("");
 
         loadProjects(
-
             1,
 
-            '',
+            "",
 
             next,
 
-            nextDays
-
+            nextDays,
         );
-
     }
-
-
-
-
 
     /*
 
@@ -1120,43 +483,23 @@ export default function Bx1Projects({
 
     */
 
-
-
     function changeDays(next) {
-
-
-
         setDays(next);
-
-
 
         setSelectedId(null);
 
-
-
-        setError('');
-
-
-
-
+        setError("");
 
         loadProjects(
-
             1,
 
             query.trim(),
 
             source,
 
-            next
-
+            next,
         );
-
     }
-
-
-
-
 
     /*
 
@@ -1168,12 +511,7 @@ export default function Bx1Projects({
 
     */
 
-
-
     function selectProject(project) {
-
-
-
         /*
 
         |--------------------------------------------------------------------------
@@ -1184,13 +522,7 @@ export default function Bx1Projects({
 
         */
 
-
-
-        setError('');
-
-
-
-
+        setError("");
 
         /*
 
@@ -1202,33 +534,9 @@ export default function Bx1Projects({
 
         */
 
+        const sourceProjectId = project?.id ?? project?.project_id ?? "";
 
-
-        const sourceProjectId =
-
-            project?.id
-
-            ??
-
-            project?.project_id
-
-            ??
-
-            '';
-
-
-
-
-
-        setSelectedId(
-
-            sourceProjectId
-
-        );
-
-
-
-
+        setSelectedId(sourceProjectId);
 
         /*
 
@@ -1240,23 +548,7 @@ export default function Bx1Projects({
 
         */
 
-
-
-        const projectName =
-
-            project?.name
-
-            ??
-
-            project?.project_name
-
-            ??
-
-            '';
-
-
-
-
+        const projectName = project?.name ?? project?.project_name ?? "";
 
         /*
 
@@ -1268,19 +560,7 @@ export default function Bx1Projects({
 
         */
 
-
-
-        const sector =
-
-            project?.sector
-
-            ??
-
-            '';
-
-
-
-
+        const sector = project?.sector ?? "";
 
         /*
 
@@ -1292,27 +572,11 @@ export default function Bx1Projects({
 
         */
 
-
-
         const projectStage =
-
-            project?.latest_status
-
-            ??
-
-            project?.status
-
-            ??
-
-            project?.project_status
-
-            ??
-
-            '';
-
-
-
-
+            project?.latest_status ??
+            project?.status ??
+            project?.project_status ??
+            "";
 
         /*
 
@@ -1324,19 +588,7 @@ export default function Bx1Projects({
 
         */
 
-
-
-        const state =
-
-            project?.state
-
-            ??
-
-            '';
-
-
-
-
+        const state = project?.state ?? "";
 
         /*
 
@@ -1348,19 +600,7 @@ export default function Bx1Projects({
 
         */
 
-
-
-        const region =
-
-            project?.region
-
-            ??
-
-            '';
-
-
-
-
+        const region = project?.region ?? "";
 
         /*
 
@@ -1372,23 +612,7 @@ export default function Bx1Projects({
 
         */
 
-
-
-        const city =
-
-            project?.city
-
-            ??
-
-            project?.city_name?.name
-
-            ??
-
-            '';
-
-
-
-
+        const city = project?.city ?? project?.city_name?.name ?? "";
 
         /*
 
@@ -1400,27 +624,11 @@ export default function Bx1Projects({
 
         */
 
-
-
         const projectType =
-
-            project?.building_use
-
-            ??
-
-            project?.project_type?.name
-
-            ??
-
-            project?.project_type
-
-            ??
-
-            '';
-
-
-
-
+            project?.building_use ??
+            project?.project_type?.name ??
+            project?.project_type ??
+            "";
 
         /*
 
@@ -1432,25 +640,11 @@ export default function Bx1Projects({
 
         */
 
+        const location = [city, state]
 
+            .filter(Boolean)
 
-        const location =
-
-            [
-
-                city,
-
-                state,
-
-            ]
-
-                .filter(Boolean)
-
-                .join(', ');
-
-
-
-
+            .join(", ");
 
         /*
 
@@ -1462,89 +656,35 @@ export default function Bx1Projects({
 
         */
 
-
-
         router.post(
-
-            '/cms/projects/import',
-
-
+            "/cms/projects/import",
 
             {
+                source: source,
 
-                source:
+                source_project_id: sourceProjectId,
 
-                    source,
+                project_name: projectName,
 
+                sector: sector,
 
+                project_type: projectType,
 
-                source_project_id:
+                project_stage: projectStage,
 
-                    sourceProjectId,
+                city: city,
 
+                state: state,
 
+                region: region,
 
-                project_name:
-
-                    projectName,
-
-
-
-                sector:
-
-                    sector,
-
-
-
-                project_type:
-
-                    projectType,
-
-
-
-                project_stage:
-
-                    projectStage,
-
-
-
-                city:
-
-                    city,
-
-
-
-                state:
-
-                    state,
-
-
-
-                region:
-
-                    region,
-
-
-
-                location:
-
-                    location,
-
+                location: location,
             },
 
-
-
             {
-
                 preserveScroll: true,
 
-
-
                 preserveState: true,
-
-
-
-
 
                 /*
 
@@ -1556,23 +696,12 @@ export default function Bx1Projects({
 
                 */
 
-
-
                 onError: (errors) => {
-
-
-
                     console.error(
+                        "Project import error:",
 
-                        'Project import error:',
-
-                        errors
-
+                        errors,
                     );
-
-
-
-
 
                     /*
 
@@ -1584,17 +713,7 @@ export default function Bx1Projects({
 
                     */
 
-
-
-                    setSelectedId(
-
-                        null
-
-                    );
-
-
-
-
+                    setSelectedId(null);
 
                     /*
 
@@ -1606,33 +725,15 @@ export default function Bx1Projects({
 
                     */
 
-
-
-                    if (
-
-                        errors?.source_project_id
-
-                    ) {
-
-
-
+                    if (errors?.source_project_id) {
                         openDuplicateModal(
-
                             errors.source_project_id,
 
-                            project
-
+                            project,
                         );
 
-
-
                         return;
-
                     }
-
-
-
-
 
                     /*
 
@@ -1644,57 +745,19 @@ export default function Bx1Projects({
 
                     */
 
-
-
-                    const firstError =
-
-                        Object.values(
-
-                            errors || {}
-
-                        )[0];
-
-
-
-
+                    const firstError = Object.values(errors || {})[0];
 
                     if (firstError) {
-
-
-
-                        setError(
-
-                            String(firstError)
-
-                        );
-
-
+                        setError(String(firstError));
 
                         return;
-
                     }
 
-
-
-
-
-                    setError(
-
-                        'Unable to open the selected project.'
-
-                    );
-
+                    setError("Unable to open the selected project.");
                 },
-
-            }
-
+            },
         );
-
     }
-
-
-
-
 
     /*
 
@@ -1706,105 +769,31 @@ export default function Bx1Projects({
 
     */
 
-
-
     function pageNumbers() {
+        const current = Number(meta.current_page || 1);
 
+        const last = Number(meta.last_page || 1);
 
+        const start = Math.max(
+            1,
 
-        const current =
+            current - 2,
+        );
 
-            Number(
+        const end = Math.min(
+            last,
 
-                meta.current_page
-
-                ||
-
-                1
-
-            );
-
-
-
-
-
-        const last =
-
-            Number(
-
-                meta.last_page
-
-                ||
-
-                1
-
-            );
-
-
-
-
-
-        const start =
-
-            Math.max(
-
-                1,
-
-                current - 2
-
-            );
-
-
-
-
-
-        const end =
-
-            Math.min(
-
-                last,
-
-                current + 2
-
-            );
-
-
-
-
+            current + 2,
+        );
 
         const pages = [];
 
-
-
-
-
-        for (
-
-            let p = start;
-
-            p <= end;
-
-            p++
-
-        ) {
-
-
-
+        for (let p = start; p <= end; p++) {
             pages.push(p);
-
         }
 
-
-
-
-
         return pages;
-
     }
-
-
-
-
 
     /*
 
@@ -1816,51 +805,17 @@ export default function Bx1Projects({
 
     */
 
-
-
     return (
-
-
-
         <CmsLayout
-
             title="Import Project"
-
-
-
             action={
-
-                <Link
-
-                    href="/cms/projects"
-
-                    className="bx-back"
-
-                >
-
+                <Link href="/cms/projects" className="bx-back">
                     <ArrowLeftIcon />
-
-
-
                     Back to Projects
-
                 </Link>
-
             }
-
         >
-
-
-
-            <Head
-
-                title="Import Biltrax Project · Biltrax CMS"
-
-            />
-
-
-
-
+            <Head title="Import Biltrax Project · Biltrax CMS" />
 
             <style>{`
 
@@ -2996,1352 +1951,388 @@ export default function Bx1Projects({
 
             `}</style>
 
-
-
-
-
             <div className="bx-page">
-
-
-
-
-
                 {/* CONTROLS */}
 
-
-
                 <div className="bx-card bx-controls">
-
-
-
-                    <div className="bx-title">
-
-                        Biltrax Project Import
-
-                    </div>
-
-
-
-
+                    <div className="bx-title">Biltrax Project Import</div>
 
                     <div className="bx-sub">
-
-                        Choose BX1 or BX2, select the updated-project period, then import a project into CMS.
-
+                        Choose BX1 or BX2, select the updated-project period,
+                        then import a project into CMS.
                     </div>
-
-
-
-
 
                     {/* SOURCE */}
 
-
-
                     <div className="bx-source-row">
+                        <span className="bx-label">SOURCE</span>
 
-
-
-                        <span className="bx-label">
-
-                            SOURCE
-
-                        </span>
-
-
-
-
-
-                        {[
-
-                            'bx1',
-
-                            'bx2',
-
-                        ].map(
-
-                            (item) => (
-
-
-
-                                <button
-
-                                    key={item}
-
-                                    type="button"
-
-                                    className={
-
-                                        `bx-source ${source === item
-
-                                            ? 'active'
-
-                                            : ''
-
-                                        }`
-
-                                    }
-
-                                    onClick={
-
-                                        () =>
-
-                                            changeSource(
-
-                                                item
-
-                                            )
-
-                                    }
-
-                                    disabled={
-
-                                        loading
-
-                                    }
-
-                                >
-
-                                    {item.toUpperCase()}
-
-                                </button>
-
-
-
-                            )
-
-                        )}
-
-
-
+                        {["bx1", "bx2"].map((item) => (
+                            <button
+                                key={item}
+                                type="button"
+                                className={`bx-source ${
+                                    source === item ? "active" : ""
+                                }`}
+                                onClick={() => changeSource(item)}
+                                disabled={loading}
+                            >
+                                {item.toUpperCase()}
+                            </button>
+                        ))}
                     </div>
-
-
-
-
 
                     {/* DAYS */}
 
-
-
                     <div className="bx-days">
+                        <span className="bx-label">UPDATED IN LAST</span>
 
-
-
-                        <span className="bx-label">
-
-                            UPDATED IN LAST
-
-                        </span>
-
-
-
-
-
-                        {visibleDayOptions.map(
-
-                            (item) => (
-
-
-
-                                <button
-
-                                    key={item}
-
-                                    type="button"
-
-                                    className={
-
-                                        `bx-day ${days === item
-
-                                            ? 'active'
-
-                                            : ''
-
-                                        }`
-
-                                    }
-
-                                    onClick={
-
-                                        () =>
-
-                                            changeDays(
-
-                                                item
-
-                                            )
-
-                                    }
-
-                                    disabled={
-
-                                        loading
-
-                                    }
-
-                                >
-
-                                    {item}D
-
-                                </button>
-
-
-
-                            )
-
-                        )}
-
-
-
+                        {visibleDayOptions.map((item) => (
+                            <button
+                                key={item}
+                                type="button"
+                                className={`bx-day ${
+                                    days === item ? "active" : ""
+                                }`}
+                                onClick={() => changeDays(item)}
+                                disabled={loading}
+                            >
+                                {item}D
+                            </button>
+                        ))}
                     </div>
-
-
-
-
 
                     {/* SEARCH */}
 
-
-
-                    <form
-
-                        className="bx-search"
-
-                        onSubmit={submitSearch}
-
-                    >
-
-
-
+                    <form className="bx-search" onSubmit={submitSearch}>
                         <div className="bx-search-wrap">
-
-
-
                             <SearchIcon />
 
-
-
-
-
                             <input
-
                                 value={query}
-
-                                onChange={
-
-                                    (e) =>
-
-                                        setQuery(
-
-                                            e.target.value
-
-                                        )
-
-                                }
-
-                                placeholder={
-
-                                    `Search ${source.toUpperCase()} projects by name, city, state or sector...`
-
-                                }
-
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder={`Search ${source.toUpperCase()} projects by name, city, state or sector...`}
                             />
-
-
-
                         </div>
 
-
-
-
-
-                        <button
-
-                            type="submit"
-
-                            disabled={loading}
-
-                        >
-
+                        <button type="submit" disabled={loading}>
                             Search
-
                         </button>
 
-
-
-
-
                         <button
-
                             type="button"
-
                             className="bx-refresh"
-
                             title="Refresh"
-
                             disabled={loading}
+                            onClick={() =>
+                                loadProjects(
+                                    meta.current_page,
 
-                            onClick={
+                                    query.trim(),
 
-                                () =>
+                                    source,
 
+                                    days,
+                                )
+                            }
+                        >
+                            <RefreshIcon />
+                        </button>
+                    </form>
+
+                    {/* DATE RANGE */}
+
+                    {/* {dateRange && (
+                        <div className="bx-range">
+                            API filter: project_updated_date_range{" "}
+                            {dateRange.start_date} to {dateRange.end_date}
+                        </div>
+                    )} */}
+                </div>
+
+                {/* PROJECT TABLE */}
+
+                <div className="bx-card">
+                    <div className="bx-table-head">
+                        <div className="bx-table-title">
+                            <ProjectIcon />
+                            {source.toUpperCase()} Project Directory
+                        </div>
+
+                        <div className="bx-count">
+                            {Number(meta.total || 0).toLocaleString("en-IN")}{" "}
+                            projects · 50 per page
+                        </div>
+                    </div>
+
+                    {error ? (
+                        <div className="bx-error">{error}</div>
+                    ) : loading ? (
+                        <div className="bx-empty">
+                            Loading {source.toUpperCase()} projects...
+                        </div>
+                    ) : projects.length === 0 ? (
+                        <div className="bx-empty">
+                            No projects found for the selected period.
+                        </div>
+                    ) : (
+                        <div className="bx-table-wrap">
+                            <table className="bx-table">
+                                <thead>
+                                    <tr>
+                                        <th>Project</th>
+
+                                        <th>Sector</th>
+
+                                        <th>Project Stage</th>
+
+                                        <th>City</th>
+
+                                        <th>State</th>
+
+                                        <th>Region</th>
+
+                                        <th>Updated</th>
+
+                                        <th></th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {projects.map((project) => {
+                                        const projectId =
+                                            project?.id ?? project?.project_id;
+
+                                        return (
+                                            <tr key={`${source}-${projectId}`}>
+                                                <td>
+                                                    <div className="bx-name">
+                                                        {project?.name ??
+                                                            project?.project_name ??
+                                                            "Untitled Project"}
+                                                    </div>
+
+                                                    <div className="bx-id">
+                                                        {source.toUpperCase()}{" "}
+                                                        ID #{projectId ?? "—"}
+                                                    </div>
+                                                </td>
+
+                                                <td>
+                                                    {project?.sector ?? "—"}
+                                                </td>
+
+                                                <td>
+                                                    {project?.latest_status ??
+                                                        project?.status ??
+                                                        project?.project_status ??
+                                                        "—"}
+                                                </td>
+
+                                                <td>
+                                                    {project?.city ??
+                                                        project?.city_name
+                                                            ?.name ??
+                                                        "—"}
+                                                </td>
+
+                                                <td>{project?.state ?? "—"}</td>
+
+                                                <td>
+                                                    {project?.region ?? "—"}
+                                                </td>
+
+                                                <td>
+                                                    {project?.updated_at ??
+                                                        project?.modified_at ??
+                                                        "—"}
+                                                </td>
+
+                                                <td>
+                                                    <button
+                                                        className="bx-select"
+                                                        type="button"
+                                                        disabled={
+                                                            selectedId ===
+                                                            projectId
+                                                        }
+                                                        onClick={() =>
+                                                            selectProject(
+                                                                project,
+                                                            )
+                                                        }
+                                                    >
+                                                        {selectedId ===
+                                                        projectId
+                                                            ? "Checking..."
+                                                            : "Select"}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {/* PAGINATION */}
+
+                    <div className="bx-pagination">
+                        <div className="bx-count">
+                            Page {meta.current_page} of {meta.last_page}
+                        </div>
+
+                        <div className="bx-pages">
+                            <button
+                                className="bx-page-btn"
+                                disabled={loading || meta.current_page <= 1}
+                                onClick={() =>
                                     loadProjects(
-
-                                        meta.current_page,
+                                        meta.current_page - 1,
 
                                         query.trim(),
 
                                         source,
 
-                                        days
-
+                                        days,
                                     )
-
-                            }
-
-                        >
-
-                            <RefreshIcon />
-
-                        </button>
-
-
-
-                    </form>
-
-
-
-
-
-                    {/* DATE RANGE */}
-
-
-
-                    {dateRange && (
-
-
-
-                        <div className="bx-range">
-
-
-
-                            API filter:
-
-                            {' '}
-
-                            project_updated_date_range
-
-                            {' '}
-
-                            {dateRange.start_date}
-
-                            {' '}
-
-                            to
-
-                            {' '}
-
-                            {dateRange.end_date}
-
-
-
-                        </div>
-
-
-
-                    )}
-
-
-
-                </div>
-
-
-
-
-
-                {/* PROJECT TABLE */}
-
-
-
-                <div className="bx-card">
-
-
-
-                    <div className="bx-table-head">
-
-
-
-                        <div className="bx-table-title">
-
-
-
-                            <ProjectIcon />
-
-
-
-                            {source.toUpperCase()}
-
-                            {' '}
-
-                            Project Directory
-
-
-
-                        </div>
-
-
-
-
-
-                        <div className="bx-count">
-
-
-
-                            {Number(
-
-                                meta.total
-
-                                ||
-
-                                0
-
-                            ).toLocaleString(
-
-                                'en-IN'
-
-                            )}
-
-
-
-                            {' '}
-
-                            projects · 50 per page
-
-
-
-                        </div>
-
-
-
-                    </div>
-
-
-
-
-
-                    {error ? (
-
-
-
-                        <div className="bx-error">
-
-                            {error}
-
-                        </div>
-
-
-
-                    ) : loading ? (
-
-
-
-                        <div className="bx-empty">
-
-
-
-                            Loading
-
-                            {' '}
-
-                            {source.toUpperCase()}
-
-                            {' '}
-
-                            projects...
-
-
-
-                        </div>
-
-
-
-                    ) : projects.length === 0 ? (
-
-
-
-                        <div className="bx-empty">
-
-                            No projects found for the selected period.
-
-                        </div>
-
-
-
-                    ) : (
-
-
-
-                        <div className="bx-table-wrap">
-
-
-
-                            <table className="bx-table">
-
-
-
-                                <thead>
-
-
-
-                                    <tr>
-
-
-
-                                        <th>
-
-                                            Project
-
-                                        </th>
-
-
-
-                                        <th>
-
-                                            Sector
-
-                                        </th>
-
-
-
-                                        <th>
-
-                                            Project Stage
-
-                                        </th>
-
-
-
-                                        <th>
-
-                                            City
-
-                                        </th>
-
-
-
-                                        <th>
-
-                                            State
-
-                                        </th>
-
-
-
-                                        <th>
-
-                                            Region
-
-                                        </th>
-
-
-
-                                        <th>
-
-                                            Updated
-
-                                        </th>
-
-
-
-                                        <th>
-
-                                        </th>
-
-
-
-                                    </tr>
-
-
-
-                                </thead>
-
-
-
-
-
-                                <tbody>
-
-
-
-                                    {projects.map(
-
-                                        (project) => {
-
-
-
-                                            const projectId =
-
-                                                project?.id
-
-                                                ??
-
-                                                project?.project_id;
-
-
-
-
-
-                                            return (
-
-
-
-                                                <tr
-
-                                                    key={
-
-                                                        `${source}-${projectId}`
-
-                                                    }
-
-                                                >
-
-
-
-                                                    <td>
-
-
-
-                                                        <div className="bx-name">
-
-
-
-                                                            {project?.name
-
-                                                                ??
-
-                                                                project?.project_name
-
-                                                                ??
-
-                                                                'Untitled Project'}
-
-
-
-                                                        </div>
-
-
-
-
-
-                                                        <div className="bx-id">
-
-
-
-                                                            {source.toUpperCase()}
-
-                                                            {' '}
-
-                                                            ID #
-
-                                                            {projectId
-
-                                                                ??
-
-                                                                '—'}
-
-
-
-                                                        </div>
-
-
-
-                                                    </td>
-
-
-
-
-
-                                                    <td>
-
-
-
-                                                        {project?.sector
-
-                                                            ??
-
-                                                            '—'}
-
-
-
-                                                    </td>
-
-
-
-
-
-                                                    <td>
-
-
-
-                                                        {project?.latest_status
-
-                                                            ??
-
-                                                            project?.status
-
-                                                            ??
-
-                                                            project?.project_status
-
-                                                            ??
-
-                                                            '—'}
-
-
-
-                                                    </td>
-
-
-
-
-
-                                                    <td>
-
-
-
-                                                        {project?.city
-
-                                                            ??
-
-                                                            project?.city_name?.name
-
-                                                            ??
-
-                                                            '—'}
-
-
-
-                                                    </td>
-
-
-
-
-
-                                                    <td>
-
-
-
-                                                        {project?.state
-
-                                                            ??
-
-                                                            '—'}
-
-
-
-                                                    </td>
-
-
-
-
-
-                                                    <td>
-
-
-
-                                                        {project?.region
-
-                                                            ??
-
-                                                            '—'}
-
-
-
-                                                    </td>
-
-
-
-
-
-                                                    <td>
-
-
-
-                                                        {project?.updated_at
-
-                                                            ??
-
-                                                            project?.modified_at
-
-                                                            ??
-
-                                                            '—'}
-
-
-
-                                                    </td>
-
-
-
-
-
-                                                    <td>
-
-
-
-                                                        <button
-
-                                                            className="bx-select"
-
-                                                            type="button"
-
-                                                            disabled={
-
-                                                                selectedId
-
-                                                                ===
-
-                                                                projectId
-
-                                                            }
-
-                                                            onClick={
-
-                                                                () =>
-
-                                                                    selectProject(
-
-                                                                        project
-
-                                                                    )
-
-                                                            }
-
-                                                        >
-
-
-
-                                                            {selectedId
-
-                                                                ===
-
-                                                                projectId
-
-                                                                ? 'Checking...'
-
-                                                                : 'Select'}
-
-
-
-                                                        </button>
-
-
-
-                                                    </td>
-
-
-
-                                                </tr>
-
-
-
-                                            );
-
-                                        }
-
-                                    )}
-
-
-
-                                </tbody>
-
-
-
-                            </table>
-
-
-
-                        </div>
-
-
-
-                    )}
-
-
-
-
-
-                    {/* PAGINATION */}
-
-
-
-                    <div className="bx-pagination">
-
-
-
-                        <div className="bx-count">
-
-
-
-                            Page
-
-                            {' '}
-
-                            {meta.current_page}
-
-                            {' '}
-
-                            of
-
-                            {' '}
-
-                            {meta.last_page}
-
-
-
-                        </div>
-
-
-
-
-
-                        <div className="bx-pages">
-
-
-
-                            <button
-
-                                className="bx-page-btn"
-
-                                disabled={
-
-                                    loading
-
-                                    ||
-
-                                    meta.current_page <= 1
-
                                 }
-
-                                onClick={
-
-                                    () =>
-
-                                        loadProjects(
-
-                                            meta.current_page - 1,
-
-                                            query.trim(),
-
-                                            source,
-
-                                            days
-
-                                        )
-
-                                }
-
                             >
-
                                 ‹
-
                             </button>
 
-
-
-
-
-                            {pageNumbers().map(
-
-                                (p) => (
-
-
-
-                                    <button
-
-                                        key={p}
-
-                                        className={
-
-                                            `bx-page-btn ${p
-
-                                                ===
-
-                                                Number(
-
-                                                    meta.current_page
-
-                                                )
-
-                                                ? 'active'
-
-                                                : ''
-
-                                            }`
-
-                                        }
-
-                                        disabled={
-
-                                            loading
-
-                                        }
-
-                                        onClick={
-
-                                            () =>
-
-                                                loadProjects(
-
-                                                    p,
-
-                                                    query.trim(),
-
-                                                    source,
-
-                                                    days
-
-                                                )
-
-                                        }
-
-                                    >
-
-                                        {p}
-
-                                    </button>
-
-
-
-                                )
-
-                            )}
-
-
-
-
-
-                            <button
-
-                                className="bx-page-btn"
-
-                                disabled={
-
-                                    loading
-
-                                    ||
-
-                                    meta.current_page
-
-                                    >=
-
-                                    meta.last_page
-
-                                }
-
-                                onClick={
-
-                                    () =>
-
+                            {pageNumbers().map((p) => (
+                                <button
+                                    key={p}
+                                    className={`bx-page-btn ${
+                                        p === Number(meta.current_page)
+                                            ? "active"
+                                            : ""
+                                    }`}
+                                    disabled={loading}
+                                    onClick={() =>
                                         loadProjects(
-
-                                            meta.current_page + 1,
+                                            p,
 
                                             query.trim(),
 
                                             source,
 
-                                            days
-
+                                            days,
                                         )
+                                    }
+                                >
+                                    {p}
+                                </button>
+                            ))}
 
+                            <button
+                                className="bx-page-btn"
+                                disabled={
+                                    loading ||
+                                    meta.current_page >= meta.last_page
                                 }
+                                onClick={() =>
+                                    loadProjects(
+                                        meta.current_page + 1,
 
+                                        query.trim(),
+
+                                        source,
+
+                                        days,
+                                    )
+                                }
                             >
-
                                 ›
-
                             </button>
-
-
-
                         </div>
-
-
-
                     </div>
-
-
-
                 </div>
-
-
-
             </div>
-
-
-
-
 
             {/* DUPLICATE PROJECT MODAL */}
 
-
-
             {duplicateModal.open && (
-
-
-
                 <div
-
                     className="bx-modal-overlay"
-
                     role="presentation"
-
-                    onMouseDown={
-
-                        (e) => {
-
-
-
-                            if (
-
-                                e.target
-
-                                ===
-
-                                e.currentTarget
-
-                            ) {
-
-
-
-                                closeDuplicateModal();
-
-                            }
-
+                    onMouseDown={(e) => {
+                        if (e.target === e.currentTarget) {
+                            closeDuplicateModal();
                         }
-
-                    }
-
+                    }}
                 >
-
-
-
                     <div
-
                         className="bx-modal"
-
                         role="dialog"
-
                         aria-modal="true"
-
                         aria-labelledby="duplicate-project-title"
-
                     >
-
-
-
                         {/* CLOSE */}
 
-
-
                         <button
-
                             type="button"
-
                             className="bx-modal-close"
-
-                            onClick={
-
-                                closeDuplicateModal
-
-                            }
-
+                            onClick={closeDuplicateModal}
                             aria-label="Close"
-
                         >
-
                             <CloseIcon />
-
                         </button>
-
-
-
-
 
                         {/* BODY */}
 
-
-
                         <div className="bx-modal-body">
-
-
-
                             <div className="bx-modal-icon">
-
                                 <WarningIcon />
-
                             </div>
-
-
-
-
 
                             <div
-
                                 id="duplicate-project-title"
-
                                 className="bx-modal-title"
-
                             >
-
                                 Project Already Added
-
                             </div>
-
-
-
-
 
                             <div className="bx-modal-message">
-
-
-
                                 {duplicateModal.message}
-
-
-
                             </div>
 
-
-
-
-
-                            {(duplicateModal.projectName
-
-                                ||
-
+                            {(duplicateModal.projectName ||
                                 duplicateModal.sourceProjectId) && (
+                                <div className="bx-modal-project">
+                                    {duplicateModal.projectName && (
+                                        <div className="bx-modal-project-name">
+                                            {duplicateModal.projectName}
+                                        </div>
+                                    )}
 
-
-
-                                    <div className="bx-modal-project">
-
-
-
-                                        {duplicateModal.projectName && (
-
-
-
-                                            <div className="bx-modal-project-name">
-
-
-
-                                                {duplicateModal.projectName}
-
-
-
-                                            </div>
-
-
-
-                                        )}
-
-
-
-
-
-                                        {duplicateModal.sourceProjectId && (
-
-
-
-                                            <div className="bx-modal-project-id">
-
-
-
-                                                {source.toUpperCase()}
-
-                                                {' '}
-
-                                                Project ID:
-
-                                                {' '}
-
-                                                {duplicateModal.sourceProjectId}
-
-
-
-                                            </div>
-
-
-
-                                        )}
-
-
-
-                                    </div>
-
-
-
-                                )}
-
-
-
+                                    {duplicateModal.sourceProjectId && (
+                                        <div className="bx-modal-project-id">
+                                            {source.toUpperCase()} Project ID:{" "}
+                                            {duplicateModal.sourceProjectId}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-
-
-
-
 
                         {/* FOOTER */}
 
-
-
                         <div className="bx-modal-footer">
-
-
-
                             <button
-
                                 type="button"
-
                                 className="bx-modal-ok"
-
-                                onClick={
-
-                                    closeDuplicateModal
-
-                                }
-
+                                onClick={closeDuplicateModal}
                                 autoFocus
-
                             >
-
                                 OK
-
                             </button>
-
-
-
                         </div>
-
-
-
                     </div>
-
-
-
                 </div>
-
-
-
             )}
-
-
-
         </CmsLayout>
-
     );
-
 }
