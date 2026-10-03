@@ -3072,13 +3072,11 @@ export default function Bx1Projects({
 
                                     className={
 
-                                        `bx-source ${
+                                        `bx-source ${source === item
 
-                                            source === item
+                                            ? 'active'
 
-                                                ? 'active'
-
-                                                : ''
+                                            : ''
 
                                         }`
 
@@ -3154,13 +3152,11 @@ export default function Bx1Projects({
 
                                     className={
 
-                                        `bx-day ${
+                                        `bx-day ${days === item
 
-                                            days === item
+                                            ? 'active'
 
-                                                ? 'active'
-
-                                                : ''
+                                            : ''
 
                                         }`
 
@@ -3968,9 +3964,7 @@ export default function Bx1Projects({
 
                                         className={
 
-                                            `bx-page-btn ${
-
-                                                p
+                                            `bx-page-btn ${p
 
                                                 ===
 
@@ -3980,9 +3974,9 @@ export default function Bx1Projects({
 
                                                 )
 
-                                                    ? 'active'
+                                                ? 'active'
 
-                                                    : ''
+                                                : ''
 
                                             }`
 
@@ -4232,65 +4226,65 @@ export default function Bx1Projects({
 
 
 
-                                <div className="bx-modal-project">
+                                    <div className="bx-modal-project">
 
 
 
-                                    {duplicateModal.projectName && (
+                                        {duplicateModal.projectName && (
 
 
 
-                                        <div className="bx-modal-project-name">
+                                            <div className="bx-modal-project-name">
 
 
 
-                                            {duplicateModal.projectName}
+                                                {duplicateModal.projectName}
 
 
 
-                                        </div>
+                                            </div>
 
 
 
-                                    )}
+                                        )}
 
 
 
 
 
-                                    {duplicateModal.sourceProjectId && (
+                                        {duplicateModal.sourceProjectId && (
 
 
 
-                                        <div className="bx-modal-project-id">
+                                            <div className="bx-modal-project-id">
 
 
 
-                                            {source.toUpperCase()}
+                                                {source.toUpperCase()}
 
-                                            {' '}
+                                                {' '}
 
-                                            Project ID:
+                                                Project ID:
 
-                                            {' '}
+                                                {' '}
 
-                                            {duplicateModal.sourceProjectId}
-
-
-
-                                        </div>
+                                                {duplicateModal.sourceProjectId}
 
 
 
-                                    )}
+                                            </div>
 
 
 
-                                </div>
+                                        )}
 
 
 
-                            )}
+                                    </div>
+
+
+
+                                )}
 
 
 
