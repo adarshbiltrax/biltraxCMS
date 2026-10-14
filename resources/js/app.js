@@ -1,0 +1,1 @@
+import {createApp} from 'vue';import Cms from './Cms.vue';import './style.css';createApp(Cms).mount('#app');
