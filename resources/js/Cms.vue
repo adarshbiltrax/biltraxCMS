@@ -6,7 +6,7 @@ import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, T
 import {
     LayoutDashboard,
     Mail,
-    BriefcaseBusiness, Sun, Moon, RefreshCw,LogOut 
+    BriefcaseBusiness, Sun, Moon, RefreshCw, LogOut, X
 } from 'lucide-vue-next';
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
@@ -239,7 +239,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                     <!-- DASHBOARD -->
                     <template v-if="view === 'dashboard'">
                         <div class="stats">
-                            <div v-for="s in [['Contact enquiries', summary.contact, '✉', 'violet'], ['Career applications', summary.careers, '▣', 'teal'], ['New', summary.new, '●', 'indigo'], ['In progress', summary.in_progress, '◷', 'gold'], ['Resolved', summary.resolved, '✓', 'mint']]"
+                            <div v-for="s in [['Contact enquiries', summary.contact, '✉', 'violet'], ['Career applications', summary.careers, '▣', 'teal'], ['New Career', summary.new_careers, '●', 'indigo'],['New Contact', summary.new_contact, '●', 'indigo'], ['In progress', summary.in_progress, '◷', 'gold'], ['Resolved', summary.resolved, '✓', 'mint']]"
                                 :key="s[0]" class="stat card">
                                 <div :class="['stat-icon', s[3]]">{{ s[2] }}</div>
                                 <p>{{ s[0] }}</p>
@@ -387,32 +387,26 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
             <!-- CENTERED MODAL -->
             <Transition name="modal">
-                <div v-if="selected" class="overlay"> 
+                <div v-if="selected" class="overlay" >
                     <section class="review-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
                         <div class="modal-head">
-                            <div class="modal-person">
-                                <span class="modal-avatar">{{ (selected.full_name || '?').slice(0, 1).toUpperCase()
-                                    }}</span>
-                                <div>
-                                    <p class="modal-kicker">{{ view === 'contact' ? 'Enquiry' : 'Application' }} details
-                                        ·
-                                        #{{ selected.id }}
-                                    </p>
-                                    <h2 id="modal-title">{{ selected.full_name }}</h2>
-                                </div>
-                                <span :class="['pill', selected.status]">{{ statusLabels[selected.status] ||
-                                    selected.status
-                                    }}</span>
+                            <div class="modal-title-group">
+                                <p class="modal-kicker">{{ view === 'contact' ? 'Contact enquiry' : 'Career application' }} #{{ selected.id }}</p>
+                                <h2 id="modal-title">{{ selected.full_name }}</h2>
                             </div>
-                            <button class="icon-btn" aria-label="Close" @click="selected = null"
-                                style="width: 40px;"><span class="d-flex justify-center"
-                                    style="margin-top: -0.3rem;font-size: large;">X</span></button>
+                            <span :class="['pill', selected.status]">{{ statusLabels[selected.status] || selected.status }}</span>
+                            <button class="icon-btn modal-close" type="button" aria-label="Close dialog"
+                                @click="selected = null">
+                                <X :size="20" :stroke-width="1.8" style="margin-left: -0.4rem;" />
+                            </button>
                         </div>
 
                         <div class="modal-body">
                             <div class="detail-section">
-                                <h3>Submitted information</h3>
-                                <p class="muted">Details provided through the website form</p>
+                                <div class="modal-section-heading">
+                                    <h3>Submitted information</h3>
+                                    <p class="muted">Details provided through the website form</p>
+                                </div>
                                 <div class="detail-grid">
                                     <div v-for="entry in visibleDetails" :key="entry[0]" class="detail-item">
                                         <span>{{ niceKey(entry[0]) }}</span>
@@ -422,8 +416,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                             </div>
 
                             <div class="edit-section">
-                                <h3>Review &amp; update</h3>
-                                <p class="muted">Manage workflow status and notes.</p>
+                                <div class="modal-section-heading">
+                                    <h3>Update record</h3>
+                                    <p class="muted">Change the status or add an internal note.</p>
+                                </div>
                                 <label>Status
                                     <select v-model="selected.status">
                                         <option value="new">New</option>

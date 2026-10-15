@@ -42,7 +42,8 @@ public function summary()
     return response()->json([
         'contact' => DemoRequest::count(),
         'careers' => CareerApplication::count(),
-        'new' => $breakdown['contact']['new'] + $breakdown['careers']['new'],
+        'new_contact' => $breakdown['contact']['new'] , 
+        'new_careers'=>$breakdown['careers']['new'],
         'in_progress' => $breakdown['contact']['in_progress'] + $breakdown['careers']['in_progress'],
         'resolved' => $breakdown['contact']['resolved'] + $breakdown['careers']['resolved'],
         'trends' => ['daily' => $daily, 'monthly' => $monthly],

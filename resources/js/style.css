@@ -158,7 +158,8 @@ button:disabled {
 }
 
 .nav.active {
-  background: #4f46e5;
+  /* background: #4f46e5; */
+  background: #746ed5b8 !important;
   color: #ffffff;
   font-weight: 600;
   box-shadow: 0 2px 5px rgba(79, 70, 229, 0.16);
@@ -212,11 +213,7 @@ sidebar footer
     color: inherit !important;
 }
 
-
-
 /* End Here */
-
-
 
 .theme-toggle {
   display: flex;
@@ -277,7 +274,7 @@ h2 {
 
 .stats {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 14px;
     margin-top: 24px
 }
