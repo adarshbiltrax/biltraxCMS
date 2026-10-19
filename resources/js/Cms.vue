@@ -6,7 +6,7 @@ import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, T
 import {
     LayoutDashboard,
     Mail,
-    BriefcaseBusiness, Sun, Moon, RefreshCw, LogOut, X
+    BriefcaseBusiness, Sun, Moon, RefreshCw, LogOut, X, Settings
 } from 'lucide-vue-next';
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
@@ -16,12 +16,13 @@ watch(theme, v => localStorage.setItem('biltrax-theme', v));
 
 const user = ref(null), credentials = reactive({ email: '', password: '' }), view = ref('dashboard'), summary = ref({}), rows = ref([]), selected = ref(null), search = ref(''), status = ref(''), page = ref(1), last = ref(1), loading = ref(false), saving = ref(false), error = ref(''), notice = ref('');
 const periods = reactive({ contact: 'daily', careers: 'daily' });
-const labels = { dashboard: 'Overview', contact: 'Contact enquiries', careers: 'Career applications' };
+const labels = { dashboard: 'Overview', contact: 'Contact enquiries', careers: 'Career applications', mailconfig: 'Email Configuration' };
 // const navItems=[['dashboard','⌂','Overview'],['contact','✉','Contact enquiries'],['careers','▤','Career applications']];
 const navItems = [
     ['dashboard', LayoutDashboard, 'Overview'],
     ['contact', Mail, 'Contact Enquiries'],
-    ['careers', BriefcaseBusiness, 'Career Applications']
+    ['careers', BriefcaseBusiness, 'Career Applications'],
+    ['mailconfig',Settings,'Email Configuration']
 ];
 const statusLabels = { new: 'New', in_progress: 'In progress', resolved: 'Resolved' };
 const hiddenFields = ['internal_notes', 'status', 'resume_path', 'resume_original_name', 'resume_mime', 'resume_size'];
@@ -33,16 +34,140 @@ function donutData(type) { const s = summary.value.status_breakdown?.[type] || {
 const barOptions = { responsive: true, maintainAspectRatio: false, animation: { duration: 550 }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y} submissions` } } }, scales: { x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#8290a5' } }, y: { beginAtZero: true, grid: { color: 'rgba(130,144,165,.18)' }, ticks: { precision: 0, color: '#8290a5' } } } };
 const donutOptions = { responsive: true, maintainAspectRatio: false, cutout: '76%', plugins: { legend: { display: false } } };
 
-async function api(path, options = {}) { const r = await fetch('/cms-api' + path, { credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, ...options }); const text = await r.text(); let d = null; if (text) { try { d = JSON.parse(text); } catch { return r.ok ? text : Promise.reject(new Error('Request failed')); } } if (!r.ok) { if (r.status === 401 || r.status === 403) return null; const message = d && typeof d === 'object' ? (d.message || d.error || 'Request failed') : 'Request failed'; throw new Error(message); } return d; }
+async function api(path, options = {}) { const r = await fetch('/cms-api' + path, { credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, ...options }); const text = await r.text(); let d = null; if (text) { try { d = JSON.parse(text); } catch { return r.ok ? text : Promise.reject(new Error('Request failed')); } } if (!r.ok) { if (r.status === 401 || r.status === 403) return null; const validationMessage = d?.errors ? Object.values(d.errors).flat()[0] : null; const message = d && typeof d === 'object' ? (validationMessage || d.message || d.error || 'Request failed') : 'Request failed'; throw new Error(message); } return d; }
 async function login() { error.value = ''; try { const d = await api('/login', { method: 'POST', body: JSON.stringify(credentials) }); if (!d?.user) { throw new Error('Invalid credentials'); } user.value = d.user; await load(); } catch (e) { error.value = e.message; } }
 async function logout() { try { await api('/logout', { method: 'POST' }); user.value = null; selected.value = null; rows.value = []; summary.value = {}; notice.value = ''; error.value = ''; } catch (e) { error.value = e.message; } }
-async function load() { loading.value = true; error.value = ''; try { const nextSummary = await api('/summary'); summary.value = nextSummary || {}; if (view.value !== 'dashboard') { const q = new URLSearchParams({ page: String(page.value) }); if (search.value) q.set('search', search.value); if (status.value) q.set('status', status.value); const d = await api('/records/' + view.value + '?' + q); rows.value = d?.data || []; last.value = d?.last_page || 1; } } catch (e) { error.value = e.message; } finally { loading.value = false; } }
-function navigate(v) { view.value = v; page.value = 1; search.value = ''; status.value = ''; selected.value = null; notice.value = ''; load(); }
+async function load() { loading.value = true; error.value = '';
+ try { const nextSummary = await api('/summary'); summary.value = nextSummary || {};
+  if (['contact','careers'].includes(view.value)) {
+    const q = new URLSearchParams({ page: String(page.value) });
+    if (search.value) q.set('search', search.value);
+    if (status.value) q.set('status', status.value);
+     const d = await api('/records/' + view.value + '?' + q);
+    rows.value = d?.data || []; last.value = d?.last_page || 1;
+    } else{
+        rows.value = [];
+        last.value = 1;
+    }
+} catch (e) {
+    error.value = e.message;
+} finally { loading.value = false; } }
+
+function navigate(v) { view.value = v; page.value = 1; search.value = ''; status.value = ''; selected.value = null; notice.value = '';
+if (v === 'mailconfig') {
+    loadEmailRecipients();
+}
+load();
+ }
 async function detail(id) { error.value = ''; try { const d = await api('/records/' + view.value + '/' + id); selected.value = d || null; } catch (e) { error.value = e.message; } }
 // async function save() {
 //     if (!selected.value) return; saving.value = true; error.value = '';
 //     try { const d = await api('/records/' + view.value + '/' + selected.value.id, { method: 'PATCH', body: JSON.stringify({ status: selected.value.status, internal_notes: selected.value.internal_notes }) }); selected.value = d || selected.value; await load(); selected.value = null; notice.value = 'Changes saved successfully'; } catch (e) { error.value = e.message; } finally { saving.value = false; }
 // }
+const emailConfig = ref(null);
+const emailDraft = ref([]);
+const emailInput = ref('');
+const emailModalLoading = ref(false);
+const emailSettingsSaving = ref(false);
+const emailSettingsError = ref('');
+const emailSettingsNotice = ref('');
+const emailConfigInfo = {
+    enquiry: {
+        title: 'Enquiry Email Configuration',
+        description: 'Manage recipient email addresses for enquiry/contact form submissions.',
+        button: 'Configure Enquiry Emails',
+    },
+    careers: {
+        title: 'Careers Email Configuration',
+        description: 'Manage recipient email addresses for career application submissions.',
+        button: 'Configure Career Emails',
+    },
+};
+const emailAddressPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+async function openEmailConfig(type) {
+    emailConfig.value = type;
+    emailDraft.value = [];
+    emailInput.value = '';
+    emailSettingsError.value = '';
+    emailSettingsNotice.value = '';
+    emailModalLoading.value = true;
+    try {
+        const data = await api('/email-recipients/' + type);
+        if (!data) throw new Error('Unable to load email settings. Please log in again.');
+        emailDraft.value = Array.isArray(data.recipients) ? [...data.recipients] : [];
+    } catch (e) {
+        emailSettingsError.value = e.message;
+    } finally {
+        emailModalLoading.value = false;
+    }
+}
+
+function closeEmailConfig() {
+    if (emailSettingsSaving.value) return;
+    emailConfig.value = null;
+    emailDraft.value = [];
+    emailInput.value = '';
+    emailSettingsError.value = '';
+    emailSettingsNotice.value = '';
+}
+
+function addEmailRecipient() {
+    emailSettingsError.value = '';
+    emailSettingsNotice.value = '';
+    const email = emailInput.value.trim();
+    if (!emailAddressPattern.test(email)) {
+        emailSettingsError.value = 'Enter a valid email address.';
+        return;
+    }
+    if (emailDraft.value.some(item => item.toLowerCase() === email.toLowerCase())) {
+        emailSettingsError.value = 'That email address has already been added.';
+        return;
+    }
+    if (emailDraft.value.length >= 20) {
+        emailSettingsError.value = 'You can add up to 20 recipient addresses.';
+        return;
+    }
+    emailDraft.value.push(email);
+    emailInput.value = '';
+}
+
+function removeEmailRecipient(index) {
+    emailDraft.value.splice(index, 1);
+    emailSettingsError.value = '';
+    emailSettingsNotice.value = '';
+}
+
+async function saveEmailRecipients() {
+    if (!emailConfig.value || emailSettingsSaving.value) return;
+    emailSettingsError.value = '';
+    emailSettingsNotice.value = '';
+    if (!emailDraft.value.length) {
+        emailSettingsError.value = 'Add at least one recipient before saving.';
+        return;
+    }
+    if (emailDraft.value.length > 20) {
+        emailSettingsError.value = 'You can add up to 20 recipient addresses.';
+        return;
+    }
+    emailSettingsSaving.value = true;
+    try {
+        const data = await api('/email-recipients/' + emailConfig.value, {
+            method: 'PUT',
+            body: JSON.stringify({ recipients: emailDraft.value }),
+        });
+        if (!data) throw new Error('Unable to save settings. Check your admin login.');
+        emailDraft.value = [...data.recipients];
+        emailSettingsNotice.value = data.message || 'Email recipients saved successfully.';
+    } catch (e) {
+        emailSettingsError.value = e.message || 'Unable to save email recipients.';
+    } finally {
+        emailSettingsSaving.value = false;
+    }
+}
+
+
+
 async function save() {
     if (!selected.value) return;
 
@@ -99,7 +224,7 @@ function niceKey(k) { return k.replaceAll('_', ' ').replace(/\b\w/g, x => x.toUp
 function formatValue(v, k) { if (v === null || v === undefined || v === '') return '—'; if (typeof v === 'boolean') return v ? 'Yes' : 'No'; if (Array.isArray(v)) return v.join(', ') || '—'; if (typeof v === 'object') return JSON.stringify(v); if (k.endsWith('_at')) { const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleString(); } return String(v); }
 function dateLabel(v) { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? '—' : d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }); }
 
-function onKey(e) { if (e.key === 'Escape') selected.value = null; }
+function onKey(e) { if (e.key === 'Escape') { if (emailConfig.value) closeEmailConfig(); else selected.value = null; } }
 onMounted(async () => { window.addEventListener('keydown', onKey); try { const d = await api('/me'); user.value = d?.user || null; if (user.value) await load(); } catch { user.value = null; } });
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 </script>
@@ -314,6 +439,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                         </section>
                     </template>
 
+                    <!-- Email configuration -->
+                    <template v-else-if="view === 'mailconfig'">
+                        <div class="email-config-grid">
+                            <section v-for="type in ['enquiry', 'careers']" :key="type" class="card panel email-config-card">
+                                <div class="email-config-icon" aria-hidden="true">
+                                    <Mail :size="21" :stroke-width="1.8" />
+                                </div>
+                                <div class="email-config-copy">
+                                    <h2>{{ emailConfigInfo[type].title }}</h2>
+                                    <p class="muted">{{ emailConfigInfo[type].description }}</p>
+                                </div>
+                                <button class="btn primary" type="button" @click="openEmailConfig(type)">
+                                    {{ emailConfigInfo[type].button }}
+                                </button>
+                            </section>
+                        </div>
+                    </template>
                     <!-- RECORDS TABLE -->
                     <section v-else class="card records">
                         <div class="records-head">
@@ -384,6 +526,74 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                     </section>
                 </main>
             </div>
+
+            <!-- CENTERED MODAL -->
+            <Transition name="modal">
+                <div v-if="emailConfig" class="overlay" @click.self="closeEmailConfig">
+                    <section class="review-modal email-recipient-modal" role="dialog" aria-modal="true" aria-labelledby="email-modal-title">
+                        <div class="modal-head">
+                            <div class="modal-title-group">
+                                <p class="modal-kicker">Email Configuration</p>
+                                <h2 id="email-modal-title">{{ emailConfigInfo[emailConfig].title }}</h2>
+                            </div>
+                            <button class="icon-btn modal-close" type="button" aria-label="Close dialog"
+                                :disabled="emailSettingsSaving" @click="closeEmailConfig">
+                                <X :size="20" :stroke-width="1.8" style="margin-left: -0.3rem;" />
+                            </button>
+                        </div>
+
+                        <div class="modal-body email-recipient-body">
+                            <p class="muted">{{ emailConfigInfo[emailConfig].description }}</p>
+                            <div v-if="emailModalLoading" class="email-loading" role="status">Loading saved recipients…</div>
+                            <template v-else>
+                                <form class="email-add-form" @submit.prevent="addEmailRecipient">
+                                    <label for="recipient-email">Email address</label>
+                                    <div class="email-input-row">
+                                        <input id="recipient-email" v-model="emailInput" type="email" maxlength="150"
+                                            autocomplete="email" placeholder="name@example.com" :disabled="emailSettingsSaving"
+                                            @keydown.enter.prevent="addEmailRecipient" />
+                                        <button class="btn" type="submit" :disabled="emailSettingsSaving || emailDraft.length >= 20">
+                                            Add Email
+                                        </button>
+                                    </div>
+                                    <p class="muted email-limit">Up to 20 recipient addresses. Duplicate addresses are not allowed.</p>
+                                </form>
+
+                                <div class="email-recipient-list">
+                                    <div class="email-recipient-list-head">
+                                        <h3>Recipient addresses</h3>
+                                        <span class="count">{{ emailDraft.length }} / 20</span>
+                                    </div>
+                                    <p v-if="!emailDraft.length" class="email-empty-state">No recipients added yet.</p>
+                                    <ul v-else>
+                                        <li v-for="(email, index) in emailDraft" :key="email.toLowerCase()">
+                                            <span>{{ email }}</span>
+                                            <button class="icon-btn email-remove" type="button" :aria-label="`Remove ${email}`"
+                                                :disabled="emailSettingsSaving" @click="removeEmailRecipient(index)">
+                                                <X :size="17" :stroke-width="1.9" />
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <p v-if="emailSettingsError" class="banner error-banner" role="alert">{{ emailSettingsError }}</p>
+                                <p v-if="emailSettingsNotice" class="banner success-banner" role="status">{{ emailSettingsNotice }}</p>
+                            </template>
+                        </div>
+
+                        <div class="modal-foot">
+                            <span class="muted">Changes apply only to this recipient configuration.</span>
+                            <div>
+                                <button class="btn" type="button" :disabled="emailSettingsSaving" @click="closeEmailConfig">Cancel</button>
+                                <button class="btn primary" type="button"
+                                    :disabled="emailModalLoading || emailSettingsSaving || !emailDraft.length"
+                                    @click="saveEmailRecipients">
+                                    {{ emailSettingsSaving ? 'Saving…' : 'Save Configuration' }}
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </Transition>
 
             <!-- CENTERED MODAL -->
             <Transition name="modal">

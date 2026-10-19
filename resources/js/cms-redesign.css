@@ -351,3 +351,38 @@ tbody tr:hover{background:var(--surface-3)}
   .app .modal-foot{flex-direction:column;align-items:stretch}
   .app .modal-foot>div .btn{flex:1}
 }
+
+/* ---------- Email recipient configuration ---------- */
+.email-config-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.email-config-card{display:flex;flex-direction:column;align-items:flex-start;gap:16px;padding:24px;min-height:220px}
+.email-config-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:11px;background:var(--soft);color:var(--primary)}
+.email-config-copy{flex:1}
+.email-config-copy h2{font-size:17px;margin:0 0 7px}
+.email-config-copy p{font-size:13px;line-height:1.55;margin:0;max-width:440px}
+.email-recipient-modal{width:min(620px,100%)}
+.email-recipient-body{gap:16px}
+.email-recipient-body>.muted{font-size:13px;margin:0}
+.email-loading,.email-empty-state{padding:16px;border:1px dashed var(--line);border-radius:8px;color:var(--muted);font-size:13px;text-align:center}
+.email-add-form{display:flex;flex-direction:column;gap:8px}
+.email-add-form label{font-size:13px;font-weight:600}
+.email-input-row{display:flex;gap:8px}
+.email-input-row input{min-width:0;flex:1}
+.email-limit{font-size:12px;margin:0}
+.email-recipient-list{min-width:0}
+.email-recipient-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.email-recipient-list-head h3{margin:0}
+.email-recipient-list ul{list-style:none;margin:0;padding:0;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.email-recipient-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 8px 7px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.email-recipient-list li:last-child{border-bottom:0}
+.email-recipient-list li>span{min-width:0;overflow-wrap:anywhere}
+.email-remove{color:#d34f4f;flex:0 0 34px}
+.email-remove:hover{background:rgba(211,79,79,.1);color:#b42318}
+.email-recipient-body .banner{margin:0}
+@media (max-width:900px){.email-config-grid{grid-template-columns:1fr}}
+@media (max-width:640px){
+  .email-config-card{min-height:0;padding:18px}
+  .email-input-row{flex-direction:column}
+  .email-input-row .btn{width:100%}
+  .email-recipient-modal .modal-foot{gap:10px}
+  .email-recipient-modal .modal-foot>span{text-align:center}
+}

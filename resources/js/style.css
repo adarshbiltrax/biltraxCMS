@@ -175,6 +175,33 @@ button:disabled {
   outline-offset: 2px;
 }
 
+/* email Configration setting */
+    .email-settings {
+    max-width: 900px;
+}
+
+.email-settings-form {
+    display: grid;
+    gap: 24px;
+    padding-top: 20px;
+}
+
+.email-setting-field {
+    display: grid;
+    gap: 8px;
+}
+
+.email-setting-field input {
+    width: 100%;
+    max-width: 600px;
+}
+
+.email-settings-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+/* end email coinfigration */
+
 /* 
 sidebar footer 
 */
