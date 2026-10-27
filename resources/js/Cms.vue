@@ -6,8 +6,11 @@ import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, T
 import {
     LayoutDashboard,
     Mail,
-    BriefcaseBusiness, Sun, Moon, RefreshCw, LogOut, X, Settings
+    BriefcaseBusiness, Sun, Moon, RefreshCw, LogOut, X, Settings, UserCog, Menu
 } from 'lucide-vue-next';
+import Teams from './Teams.vue';
+const showModal = ref(false); 
+const mobileNavOpen = ref(false);
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -16,13 +19,14 @@ watch(theme, v => localStorage.setItem('biltrax-theme', v));
 
 const user = ref(null), credentials = reactive({ email: '', password: '' }), view = ref('dashboard'), summary = ref({}), rows = ref([]), selected = ref(null), search = ref(''), status = ref(''), page = ref(1), last = ref(1), loading = ref(false), saving = ref(false), error = ref(''), notice = ref('');
 const periods = reactive({ contact: 'daily', careers: 'daily' });
-const labels = { dashboard: 'Overview', contact: 'Contact enquiries', careers: 'Career applications', mailconfig: 'Email Configuration' };
+const labels = { dashboard: 'Overview', contact: 'Contact enquiries', careers: 'Career applications', mailconfig: 'Email Configuration',teamconfig:'Team Manage' };
 // const navItems=[['dashboard','⌂','Overview'],['contact','✉','Contact enquiries'],['careers','▤','Career applications']];
 const navItems = [
     ['dashboard', LayoutDashboard, 'Overview'],
     ['contact', Mail, 'Contact Enquiries'],
     ['careers', BriefcaseBusiness, 'Career Applications'],
-    ['mailconfig',Settings,'Email Configuration']
+    ['mailconfig',Settings,'Email Configuration'],
+    ['teamconfig',UserCog,'Team Manage']
 ];
 const statusLabels = { new: 'New', in_progress: 'In progress', resolved: 'Resolved' };
 const hiddenFields = ['internal_notes', 'status', 'resume_path', 'resume_original_name', 'resume_mime', 'resume_size'];
@@ -53,7 +57,7 @@ async function load() { loading.value = true; error.value = '';
     error.value = e.message;
 } finally { loading.value = false; } }
 
-function navigate(v) { view.value = v; page.value = 1; search.value = ''; status.value = ''; selected.value = null; notice.value = '';
+function navigate(v) { view.value = v; mobileNavOpen.value = false; page.value = 1; search.value = ''; status.value = ''; selected.value = null; notice.value = '';
 if (v === 'mailconfig') {
     loadEmailRecipients();
 }
@@ -71,6 +75,7 @@ const emailModalLoading = ref(false);
 const emailSettingsSaving = ref(false);
 const emailSettingsError = ref('');
 const emailSettingsNotice = ref('');
+const totalMembercount = ref(0);
 const emailConfigInfo = {
     enquiry: {
         title: 'Enquiry Email Configuration',
@@ -219,12 +224,13 @@ async function save() {
         saving.value = false;
     }
 }
+
 async function resume(id) { try { const d = await api('/resume/' + id); if (!d?.url) { throw new Error('Resume not available'); } window.open(d.url, '_blank', 'noopener,noreferrer'); } catch (e) { error.value = e.message; } }
 function niceKey(k) { return k.replaceAll('_', ' ').replace(/\b\w/g, x => x.toUpperCase()); }
 function formatValue(v, k) { if (v === null || v === undefined || v === '') return '—'; if (typeof v === 'boolean') return v ? 'Yes' : 'No'; if (Array.isArray(v)) return v.join(', ') || '—'; if (typeof v === 'object') return JSON.stringify(v); if (k.endsWith('_at')) { const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleString(); } return String(v); }
 function dateLabel(v) { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? '—' : d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }); }
 
-function onKey(e) { if (e.key === 'Escape') { if (emailConfig.value) closeEmailConfig(); else selected.value = null; } }
+function onKey(e) { if (e.key === 'Escape') { if (emailConfig.value) closeEmailConfig(); else if (selected.value) selected.value = null; else mobileNavOpen.value = false; } }
 onMounted(async () => { window.addEventListener('keydown', onKey); try { const d = await api('/me'); user.value = d?.user || null; if (user.value) await load(); } catch { user.value = null; } });
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 </script>
@@ -268,7 +274,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
         <button class="icon-btn" title="Sign out" aria-label="Sign out" @click="logout">⏻</button>
       </div>
     </aside> -->
-            <aside class="sidebar">
+            <button v-if="mobileNavOpen" class="sidebar-backdrop" type="button" aria-label="Close navigation"
+                @click="mobileNavOpen = false"></button>
+            <aside :class="['sidebar', { 'is-open': mobileNavOpen }]">
                 <div class="sidebar-top">
                     <div class="brand">
                         <div class="logo">
@@ -306,8 +314,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                 <!-- <div class="top-actions"> -->
                 <!-- <button class="btn" :disabled="loading" @click="load">↻ Refresh</button> -->
                 <!-- </div> -->
-                <div class="sidebar-bottom">
-                    <button class="btn theme-toggle" type="button" @click="theme = theme === 'dark' ? 'light' : 'dark'">
+                 <div>
+                <div class="sidebar-bottom mb-2">
+                    <button class="btn theme-toggle w-60" type="button" @click="theme = theme === 'dark' ? 'light' : 'dark'">
                         <span class="theme-icon">
                             <component :is="theme === 'dark' ? Sun : Moon" :size="16" :stroke-width="1.9" />
                         </span>
@@ -329,13 +338,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                       <LogOut :size="18" :stroke-width="1.8" />
                     </button>
                 </div>
+                </div>
             </aside>
             <!-- MAIN -->
             <div class="main">
                 <header class="topbar">
-                    <div class="topbar-title">
-                        <p class="breadcrumb">Biltrax <span>/</span> {{ labels[view] }}</p>
-                        <h1>{{ labels[view] }}</h1>
+                    <div class="topbar-heading">
+                        <button class="icon-btn mobile-menu-toggle" type="button" :aria-expanded="mobileNavOpen"
+                            aria-label="Toggle navigation" @click="mobileNavOpen = !mobileNavOpen">
+                            <Menu :size="21" :stroke-width="1.8" />
+                        </button>
+                        <div class="topbar-title">
+                            <p class="breadcrumb">Biltrax <span>/</span> {{ labels[view] }}</p>
+                            <h1>{{ labels[view] }}</h1>
                         <!-- <p class="muted subtitle">{{ view === 'dashboard' ? 'Your website operations and submission
                             insights.':view==='contact'?'Review and manage incoming enquiries.':'Review applications and
                             candidate progress.'}}</p> -->
@@ -345,13 +360,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                                     ? 'Your website operations and submission insights.'
                                     : view === 'contact'
                                         ? 'Review and manage incoming enquiries.'
-                                        : 'Review applications and candidate progress.'
+                                        : view === 'careers' ? 'Review applications and candidate progress.'
+                                        :view === 'mailconfig' ?'Manage your website and application email settings'
+                                        :view === 'teamconfig' ? 'Manage your team members and access'
+                                        :''
+                                        
                             }}
-                        </p>
+                            </p>
+                        </div>
                     </div>
                     <div class="top-actions">
                         <button class="btn" :disabled="loading" @click="load">
-                            <RefreshCw :size="18" :stroke-width="1.8" />Refresh
+                            <RefreshCw :size="18" :stroke-width="1.8" /><span class="refresh-label">Refresh</span>
                         </button>
                         <!-- <button class="btn" @click="theme=theme==='dark'?'light':'dark'">{{theme==='dark'?'☀ Light mode':'☾ Dark mode'}}</button> -->
                     </div>
@@ -363,7 +383,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
                     <!-- DASHBOARD -->
                     <template v-if="view === 'dashboard'">
-                        <div class="stats">
+                        <div class="stats grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
                             <div v-for="s in [['Contact enquiries', summary.contact, '✉', 'violet'], ['Career applications', summary.careers, '▣', 'teal'], ['New Career', summary.new_careers, '●', 'indigo'],['New Contact', summary.new_contact, '●', 'indigo'], ['In progress', summary.in_progress, '◷', 'gold'], ['Resolved', summary.resolved, '✓', 'mint']]"
                                 :key="s[0]" class="stat card">
                                 <div :class="['stat-icon', s[3]]">{{ s[2] }}</div>
@@ -373,7 +393,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                             </div>
                         </div>
 
-                        <div class="grid-2">
+                        <div class="grid-2 grid grid-cols-1 gap-5 lg:grid-cols-2">
                             <section v-for="type in ['contact', 'careers']" :key="type" class="card panel">
                                 <div class="panel-head">
                                     <div>
@@ -401,7 +421,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                             </section>
                         </div>
 
-                        <div class="grid-2">
+                        <div class="grid-2 grid grid-cols-1 gap-5 lg:grid-cols-2">
                             <section v-for="type in ['contact', 'careers']" :key="type" class="card panel">
                                 <div class="panel-head">
                                     <div>
@@ -463,12 +483,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                                 <h2>{{ labels[view] }}</h2>
                                 <p class="muted">Search, review and update submitted records.</p>
                             </div>
-                            <span class="count">{{ rows.length }} on this page</span>
-                        </div>
+                            <div>
+                                <button v-if="view==='teamconfig'" class="btn m-3" style="background-color:var(--primary);color:white;margin:0.5rem" @click="showModal = true">Add Team Member</button>
+                                <span v-if="view === 'teamconfig'" class="count">{{ totalMembercount }} on this page</span>
+                                <span class="count" v-if="view !== 'teamconfig'">{{ rows.length }} on this page</span>
+                            </div>
+                          </div>
                         <div class="toolbar">
                             <input v-model="search" placeholder="Search by name, email or company"
                                 @keyup.enter="page = 1; load()" />
-                            <select v-model="status" @change="page = 1; load()">
+                            <select v-model="status" @change="page = 1; load()" v-if="view === 'careers' ||view === 'contact' ">
                                 <option value="">All statuses</option>
                                 <option value="new">New</option>
                                 <option value="in_progress">In progress</option>
@@ -477,7 +501,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                             <button class="btn primary" @click="page = 1; load()">Search</button>
                             <button class="btn" @click="search = ''; status = ''; page = 1; load()">Reset</button>
                         </div>
-                        <div class="overflow">
+                        <div class="overflow" v-if="view === 'careers' ||view === 'contact' ">
                             <table>
                                 <thead>
                                     <tr>
@@ -514,6 +538,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                                 </tbody>
                             </table>
                         </div>
+                        <!-- team config -->
+                         <div v-if="view === 'teamconfig'">
+                            <Teams :show-modal="showModal" :search="search" @close="showModal = false" @member-count="totalMembercount = $event"/>
+                         </div>
+                         <!-- end Team config -->
                         <div class="pager">
                             <span>Page {{ page }} of {{ last }}</span>
                             <div>
