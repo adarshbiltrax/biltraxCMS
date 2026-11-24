@@ -8,7 +8,7 @@ body {
     margin: 0;
     font: 14px Manrope, Arial, sans-serif
 }
-
+  
 .app {
     --bg: #080e1c;
     --surface: #152039bb;
@@ -175,6 +175,33 @@ button:disabled {
   outline-offset: 2px;
 }
 
+/* email Configration setting */
+    .email-settings {
+    max-width: 900px;
+}
+
+.email-settings-form {
+    display: grid;
+    gap: 24px;
+    padding-top: 20px;
+}
+
+.email-setting-field {
+    display: grid;
+    gap: 8px;
+}
+
+.email-setting-field input {
+    width: 100%;
+    max-width: 600px;
+}
+
+.email-settings-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+/* end email coinfigration */
+
 /* 
 sidebar footer 
 */
@@ -233,6 +260,11 @@ sidebar footer
 
 .theme-toggle:hover {
   background: #f1f5f9;
+}
+
+/* Sweet alert  */
+.swal2-container {
+    z-index: 999999 !important;
 }
 
 /* End here */
@@ -353,7 +385,7 @@ td {
 }
 
 th {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 1px
