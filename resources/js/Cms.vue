@@ -126,7 +126,7 @@ async function refreshCsrfToken() {
     return data.token;
 }
 
-async function load() { loading.value = true; error.value = ''; try { const nextSummary = await api('/summary'); summary.value = nextSummary || {}; if (view.value !== 'dashboard') { const q = new URLSearchParams({ page: String(page.value) }); if (search.value) q.set('search', search.value); if (status.value) q.set('status', status.value); const d = await api('/records/' + view.value + '?' + q); rows.value = d?.data || []; last.value = d?.last_page || 1; } } catch (e) { error.value = e.message; } finally { loading.value = false; } }
+async function load() { loading.value = true; error.value = ''; try { const nextSummary = await api('/summary'); summary.value = nextSummary || {}; if (view.value === 'contact' || view.value === 'careers') { const q = new URLSearchParams({ page: String(page.value) }); if (search.value) q.set('search', search.value); if (status.value) q.set('status', status.value); const d = await api('/records/' + view.value + '?' + q); rows.value = d?.data || []; last.value = d?.last_page || 1; } } catch (e) { error.value = e.message; } finally { loading.value = false; } }
 function navigate(v) { view.value = v; page.value = 1; search.value = ''; status.value = ''; selected.value = null; notice.value = ''; load(); }
 async function detail(id) { error.value = ''; try { const d = await api('/records/' + view.value + '/' + id); selected.value = d || null; } catch (e) { error.value = e.message; } }
 // async function save() {
