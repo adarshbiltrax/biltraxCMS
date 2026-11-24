@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, Storage};
+use Illuminate\Support\Facades\{Auth, Hash, Storage};
 use Illuminate\Validation\Rule;
-use App\Models\{DemoRequest, CareerApplication};
+use App\Models\{DemoRequest, CareerApplication, User};
 
 class CmsController extends Controller
 {
@@ -16,6 +16,39 @@ class CmsController extends Controller
     }
     public function login(Request $r)
     {
+        // $v = $r->validate(['email' => 'required|email', 'password' => 'required|string']);
+        // if (!Auth::attempt($v)) {
+        //     return response()->json(['message' => 'Invalid credentials'], 422);
+        // }
+        // $r->session()->regenerate();
+        // return response()->json(['user' => Auth::user()->only('id', 'name', 'email')]);
+        try{
+            if($r->isMethod('POST')){
+                // validate kiya;
+               $valiedate =  $r->validate([
+                'email' => 'required|string|email|exists:users,email',
+                'password' => 'required|string',
+               ]);
+                // condition check karo;
+                $user = User::where('email',$valiedate['email'])->first();
+                // print_r("User Invalid".$user);
+                // exit;
+                $password = Hash::check($valiedate['password'],$user->password);
+
+                if( !$user || !$password ){
+                     return response()->json(['status'=>'error','message'=>'Invalid email or password'],401);
+                }
+                // Laravel main user ko login karwavaya
+                Auth::login($user);
+                // session id genrate kiya
+                $r->session()->regenerate();
+              return response()->json(['status'=>'success','message'=>'Login successfull','user' => Auth::user()->only('id', 'name', 'email')],200);
+            }else{
+                 return response()->json(['status'=>'error','message'=>'Invalid request method'],405);
+            }
+        }catch(\Exception $e){
+            return response()->json(['status'=>'error','message'=>'Internal server issue'.$e->getMessage()],500);
+        }
         $v = $r->validate(['email' => 'required|email', 'password' => 'required|string']);
         if (!Auth::attempt($v)) {
             return response()->json(['message' => 'Invalid credentials'], 422);
