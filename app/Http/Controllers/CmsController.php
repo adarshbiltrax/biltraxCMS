@@ -49,12 +49,6 @@ class CmsController extends Controller
         }catch(\Exception $e){
             return response()->json(['status'=>'error','message'=>'Internal server issue'.$e->getMessage()],500);
         }
-        $v = $r->validate(['email' => 'required|email', 'password' => 'required|string']);
-        if (!Auth::attempt($v)) {
-            return response()->json(['message' => 'Invalid credentials'], 422);
-        }
-        $r->session()->regenerate();
-        return response()->json(['user' => Auth::user()->only('id', 'name', 'email')]);
     }
     public function logout(Request $r)
     {
