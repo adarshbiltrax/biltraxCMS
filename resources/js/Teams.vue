@@ -9,7 +9,7 @@
                     <th>Id</th>
                     <th>Name</th>
                     <th>Designation</th>
-                    <th>Bio</th>
+                    <!-- <th>Bio</th> -->
                     <th>Qualification</th>
                     <th>LinkedIn URL</th>
                     <th>Image</th>
@@ -47,8 +47,8 @@
                     <td>{{ index + 1 }}</td>
                     <td>{{ mem.firstname}}{{  mem.lastname }}</td>
                     <td>{{ mem.designation }}</td>
-                    <td>{{ mem.bio }}</td>
-                    <td>{{ mem.qualification }}</td>
+                    <!-- <td class="bio-text">{{ mem.bio }}</td> -->
+                    <td>{{ mem.qualification ?? "-" }}</td>
                     <td>
                         <a v-if="mem.linkdin_url" :href="mem.linkdin_url" target="_blank">
                             LinkedIn
@@ -85,7 +85,6 @@
             <div
                 v-if="showModal || isEditModalOpen"
                 class="modal-overlay"
-                @click.self="closeModal"
             >
                 <div class="modal-box">
 
@@ -147,7 +146,7 @@
                                     v-model="form.qualification"
                                     type="text"
                                     placeholder="Enter qualification"
-                                    required
+                                    
                                 />
                             </div>
 
@@ -362,7 +361,7 @@ async function saveMember(e) {
             });
             return;
         }
-
+         closeModal();
         await Swal.fire({
             icon: 'success',
             title: 'Success!',
@@ -372,11 +371,11 @@ async function saveMember(e) {
         });
         
         await getAllMember();
-        closeModal();
+        // closeModal();
 
     } catch (error) {
         console.error('Error:', error);
-
+         closeModal();
         await Swal.fire({
             icon: 'error',
             title: 'Error!',
@@ -539,7 +538,8 @@ async function updateMember() {
 
             throw new Error(message);
         }
-
+        // Modal close
+        closeModal();
         await Swal.fire({
             icon: 'success',
             title: 'Updated!',
@@ -550,12 +550,11 @@ async function updateMember() {
         // Table refresh
         await getAllMember();
 
-        // Modal close
-        closeModal();
+        
 
     } catch (e) {
         console.error('Update error:', e.message);
-
+         closeModal();
         Swal.fire({
             icon: 'error',
             title: 'Update Failed',
@@ -661,6 +660,18 @@ onMounted(()=>{
     margin-bottom: 20px;
 }
 
+.bio-text {
+    max-width: 200px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
 table {
     width: 100%;
     min-width: 850px;
@@ -722,7 +733,7 @@ th {
     max-height: 90vh;
     max-height: 90dvh;
     overflow-y: auto;
-    background: #fff;
+    background: var(--bg);
     border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
@@ -824,13 +835,13 @@ th {
 }
 
 .save-btn {
-    background: #20aa84;
-    border: 1px solid #20aa84;
+    background: #207aaa;
+    border: 1px solid #2077aa;
     color: white;
 }
 
 .save-btn:hover {
-    background: #178969;
+    background: #175f89;
 }
 
 /* Transition animation */

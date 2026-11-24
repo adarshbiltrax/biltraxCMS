@@ -7,6 +7,9 @@ return Application::configure(basePath: dirname(__DIR__))
  ->withMiddleware(function (Middleware $middleware): void {
      $middleware->validateCsrfTokens(except: [
             'cms-api/team-create',
+              'team-members',
+              'demoperpose-mail',
+              'newCareers-form'
         ]);
  })
  ->withExceptions(function (Exceptions $exceptions): void {})

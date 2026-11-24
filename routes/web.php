@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CmsController;
 use App\Http\Controllers\Cms\EmailRecipientController;
+use App\Http\Controllers\Formcontroller;
 use App\Http\Controllers\TeamsMemberController;
 
 Route::post('/cms-api/login',[CmsController::class,'login'])->middleware('throttle:5,1');
@@ -24,7 +25,10 @@ Route::middleware('auth')->prefix('cms-api')->group(function(){
       Route::delete('/team-delete',[TeamsMemberController::class,'DeleteTeamMember']); 
     });
     //   Route::post('/cms-api/team-create',[TeamsMemberController::class,'createTeamsMember']);
+    Route::post('/team-members',[TeamsMemberController::class,'getAllTeammember']);
 
+    Route::post('/demoperpose-mail',[Formcontroller::class,'addDemo']);
+    Route::post('/newCareers-form',[Formcontroller::class,'CareerForm']);
     // Route::get('cms-api/email-recipients/{type}', [EmailRecipientController::class, 'show']);
     // Route::put('cms-api/email-recipients/{type}', [EmailRecipientController::class, 'update']);
 

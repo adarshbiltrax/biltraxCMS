@@ -71,6 +71,7 @@ async function detail(id) { error.value = ''; try { const d = await api('/record
 const emailConfig = ref(null);
 const emailDraft = ref([]);
 const emailInput = ref('');
+const emailRecipientAdded = ref(false);
 const emailModalLoading = ref(false);
 const emailSettingsSaving = ref(false);
 const emailSettingsError = ref('');
@@ -94,6 +95,7 @@ async function openEmailConfig(type) {
     emailConfig.value = type;
     emailDraft.value = [];
     emailInput.value = '';
+    emailRecipientAdded.value = false;
     emailSettingsError.value = '';
     emailSettingsNotice.value = '';
     emailModalLoading.value = true;
@@ -113,6 +115,7 @@ function closeEmailConfig() {
     emailConfig.value = null;
     emailDraft.value = [];
     emailInput.value = '';
+    emailRecipientAdded.value = false;
     emailSettingsError.value = '';
     emailSettingsNotice.value = '';
 }
@@ -135,6 +138,7 @@ function addEmailRecipient() {
     }
     emailDraft.value.push(email);
     emailInput.value = '';
+    emailRecipientAdded.value = true;
 }
 
 function removeEmailRecipient(index) {
@@ -581,7 +585,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                                         <input id="recipient-email" v-model="emailInput" type="email" maxlength="150"
                                             autocomplete="email" placeholder="name@example.com" :disabled="emailSettingsSaving"
                                             @keydown.enter.prevent="addEmailRecipient" />
-                                        <button class="btn" type="submit" :disabled="emailSettingsSaving || emailDraft.length >= 20">
+                                        <button class="btn" type="submit"
+                                            :disabled="emailSettingsSaving || !emailInput.trim() || emailDraft.length >= 20">
                                             Add Email
                                         </button>
                                     </div>
@@ -614,7 +619,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                             <div>
                                 <button class="btn" type="button" :disabled="emailSettingsSaving" @click="closeEmailConfig">Cancel</button>
                                 <button class="btn primary" type="button"
-                                    :disabled="emailModalLoading || emailSettingsSaving || !emailDraft.length"
+                                    :disabled="emailModalLoading || emailSettingsSaving || !emailRecipientAdded || !emailDraft.length"
                                     @click="saveEmailRecipients">
                                     {{ emailSettingsSaving ? 'Saving…' : 'Save Configuration' }}
                                 </button>
