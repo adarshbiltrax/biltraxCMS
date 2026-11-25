@@ -14,42 +14,84 @@ class CmsController extends Controller
         abort_unless(in_array($type, ['contact', 'careers'], true), 404);
         return $type === 'contact' ? DemoRequest::class : CareerApplication::class;
     }
-    public function login(Request $r)
-    {
-        // $v = $r->validate(['email' => 'required|email', 'password' => 'required|string']);
-        // if (!Auth::attempt($v)) {
-        //     return response()->json(['message' => 'Invalid credentials'], 422);
-        // }
-        // $r->session()->regenerate();
-        // return response()->json(['user' => Auth::user()->only('id', 'name', 'email')]);
-        try{
-            if($r->isMethod('POST')){
-                // validate kiya;
-               $valiedate =  $r->validate([
-                'email' => 'required|string|email|exists:users,email',
-                'password' => 'required|string',
-               ]);
-                // condition check karo;
-                $user = User::where('email',$valiedate['email'])->first();
-                // print_r("User Invalid".$user);
-                // exit;
-                $password = Hash::check($valiedate['password'],$user->password);
+    // public function login(Request $r)
+    // {
+    //     // $v = $r->validate(['email' => 'required|email', 'password' => 'required|string']);
+    //     // if (!Auth::attempt($v)) {
+    //     //     return response()->json(['message' => 'Invalid credentials'], 422);
+    //     // }
+    //     // $r->session()->regenerate();
+    //     // return response()->json(['user' => Auth::user()->only('id', 'name', 'email')]);
+    //     try{
+    //         if($r->isMethod('POST')){
+    //             // validate kiya;
+    //            $valiedate =  $r->validate([
+    //             'email' => 'required|string|email|exists:users,email',
+    //             'password' => 'required|string',
+    //            ]);
+    //             // condition check karo;
+    //             $user = User::where('email',$valiedate['email'])->first();
+    //             // print_r("User Invalid".$user);
+    //             // exit;
+    //             $password = Hash::check($valiedate['password'],$user->password);
 
-                if( !$user || !$password ){
-                     return response()->json(['status'=>'error','message'=>'Invalid email or password'],401);
-                }
-                // Laravel main user ko login karwavaya
-                Auth::login($user);
-                // session id genrate kiya
-                $r->session()->regenerate();
-              return response()->json(['status'=>'success','message'=>'Login successfull','user' => Auth::user()->only('id', 'name', 'email')],200);
-            }else{
-                 return response()->json(['status'=>'error','message'=>'Invalid request method'],405);
-            }
-        }catch(\Exception $e){
-            return response()->json(['status'=>'error','message'=>'Internal server issue'.$e->getMessage()],500);
+    //             if( !$user || !$password ){
+    //                  return response()->json(['status'=>'error','message'=>'Invalid email or password'],401);
+    //             }
+    //             // Laravel main user ko login karwavaya
+    //             Auth::login($user);
+    //             // session id genrate kiya
+    //             $r->session()->regenerate();
+    //           return response()->json(['status'=>'success','message'=>'Login successfull','user' => Auth::user()->only('id', 'name', 'email')],200);
+    //         }else{
+    //              return response()->json(['status'=>'error','message'=>'Invalid request method'],405);
+    //         }
+    //     }catch(\Exception $e){
+    //         return response()->json(['status'=>'error','message'=>'Internal server issue'.$e->getMessage()],500);
+    //     }
+    // }
+
+public function login(Request $r)
+{
+    try {
+        $validated = $r->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
+
+        // User find karo
+        $user = User::where('email', $validated['email'])->first();
+
+        // User aur password verify karo
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid email or password'
+            ], 401);
         }
+
+        // Laravel session guard ke through login
+        Auth::login($user);
+
+        // Session ID regenerate karo
+        $r->session()->regenerate();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Login successful',
+            'user' => Auth::user()->only('id', 'name', 'email')
+        ], 200);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        throw $e;
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Internal server issue'
+        ], 500);
     }
+}
+
     public function logout(Request $r)
     {
         Auth::logout();
