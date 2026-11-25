@@ -86,6 +86,8 @@ public function login(Request $r)
     } catch (\Illuminate\Validation\ValidationException $e) {
         throw $e;
     } catch (\Exception $e) {
+        report($e);
+
         return response()->json([
             'status' => 'error',
             'message' => 'Internal server issue'
