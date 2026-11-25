@@ -38,7 +38,7 @@ function donutData(type) { const s = summary.value.status_breakdown?.[type] || {
 const barOptions = { responsive: true, maintainAspectRatio: false, animation: { duration: 550 }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y} submissions` } } }, scales: { x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#8290a5' } }, y: { beginAtZero: true, grid: { color: 'rgba(130,144,165,.18)' }, ticks: { precision: 0, color: '#8290a5' } } } };
 const donutOptions = { responsive: true, maintainAspectRatio: false, cutout: '76%', plugins: { legend: { display: false } } };
 
-async function api(path, options = {}) { const r = await fetch('/cms-api' + path, { credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, ...options }); const text = await r.text(); let d = null; if (text) { try { d = JSON.parse(text); } catch { return r.ok ? text : Promise.reject(new Error('Request failed')); } } if (!r.ok) { if (r.status === 401 || r.status === 403) return null; const message = d && typeof d === 'object' ? (d.message || d.error || 'Request failed') : 'Request failed'; throw new Error(message); } return d; }
+async function api(path, options = {}) { const r = await fetch('/cms-api' + path, { credentials: 'include', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, ...options }); const text = await r.text(); let d = null; if (text) { try { d = JSON.parse(text); } catch { return r.ok ? text : Promise.reject(new Error('Request failed')); } } if (!r.ok) { if (r.status === 401 || r.status === 403) return null; const message = d && typeof d === 'object' ? (d.message || d.error || 'Request failed') : 'Request failed'; throw new Error(message); } return d; }
 // async function login() { error.value = ''; try { const d = await api('/login', { method: 'POST', body: JSON.stringify(credentials) }); if (!d?.user) { throw new Error('Invalid credentials'); } user.value = d.user; await load(); } catch (e) { error.value = e.message; } }
 async function login(){
     error.value = '';
@@ -47,6 +47,7 @@ async function login(){
         // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
        const response = await fetch('/cms-api/login',{
         method:'POST',
+        // credentials: 'include',
        headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
@@ -77,6 +78,7 @@ async function logout(){
         // console.log("CSRF Token",csrfToken);
         const response = await api('/logout',{
             method:'POST',
+             credentials: 'include',
             headers:{
              'Content-Type':'application/json',
              'Accept':'application/json',
@@ -105,7 +107,7 @@ async function logout(){
 async function refreshCsrfToken() {
     const response = await fetch('/csrf-token', {
         method: 'GET',
-        credentials: 'same-origin',
+        credentials: 'include',
         headers: {
             'Accept': 'application/json',
         },
@@ -227,7 +229,7 @@ async function saveEmailRecipients() {
     emailSettingsSaving.value = true;
     try {
         const data = await api('/email-recipients/' + emailConfig.value, {
-            method: 'PUT',
+            method: 'PUT',credentials: 'include',
             body: JSON.stringify({ recipients: emailDraft.value }),
         });
         if (!data) throw new Error('Unable to save settings. Check your admin login.');
@@ -252,7 +254,7 @@ async function save() {
         const d = await api(
             '/records/' + view.value + '/' + selected.value.id,
             {
-                method: 'PATCH',
+                method: 'PATCH', credentials: 'include',
                 body: JSON.stringify({
                     status: selected.value.status,
                     internal_notes: selected.value.internal_notes
