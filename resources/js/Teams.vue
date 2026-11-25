@@ -212,6 +212,8 @@
 import { Pencil, Trash } from 'lucide-vue-next';
 import Swal from 'sweetalert2';
 import { onMounted, reactive, ref, watch,computed } from 'vue';
+import { refreshCsrfToken } from './utils/csrf.js';
+
 const isSubmitting = ref(false);
 const allMember = ref([]);
 const SingleMember = ref(null);
@@ -221,9 +223,12 @@ const props = defineProps({
     showModal:{type:Boolean,default:false},
     search:{type:String,default:''}
 })
-const csrfToken = document.querySelector('meta[name="csrf-token"]')
-            ?.getAttribute('content');
+// const csrfToken = document.querySelector('meta[name="csrf-token"]')
+//             ?.getAttribute('content');
 
+// const csrfToken =  refreshCsrfToken();
+
+// return
 
 const emit = defineEmits(['close','memberCount']);
 
@@ -391,32 +396,63 @@ async function saveMember(e) {
 
 // Get all memeber data;
 
+// async function getAllMember() {
+//     try {
+//         // const csrfToken = document
+//         //     .querySelector('meta[name="csrf-token"]')
+//         //     ?.getAttribute('content');
+
+//         // console.log('CSRF Token:', csrfToken);
+     
+//         const response = await fetch('/cms-api/team-member', {
+//             method: 'POST',
+//              credentials: 'include',
+//             headers: {
+//                 'Accept': 'application/json',
+//                 'X-CSRF-TOKEN': csrfToken
+//             }
+//         });
+
+//         const res = await response.json();
+//          allMember.value = res.data ?? [];
+
+//         if (!response.ok) {
+//             console.log('API Error:', response.status, res);
+//             return;
+//         }
+//          emit('memberCount', allMember.value.length);
+//     //   ``  console.log('Result:', allMember.value);
+//     } catch (e) {
+//         console.log('Error:', e.message);
+//     }
+// }
+
 async function getAllMember() {
     try {
-        // const csrfToken = document
-        //     .querySelector('meta[name="csrf-token"]')
-        //     ?.getAttribute('content');
-
-        // console.log('CSRF Token:', csrfToken);
+        const csrfToken = await refreshCsrfToken();
 
         const response = await fetch('/cms-api/team-member', {
             method: 'POST',
-             credentials: 'include',
+            credentials: 'include',
             headers: {
                 'Accept': 'application/json',
+                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
-            }
+            },
+            body: JSON.stringify({})
         });
 
         const res = await response.json();
-         allMember.value = res.data ?? [];
 
         if (!response.ok) {
             console.log('API Error:', response.status, res);
             return;
         }
-         emit('memberCount', allMember.value.length);
-    //   ``  console.log('Result:', allMember.value);
+
+        allMember.value = res.data ?? [];
+
+        emit('memberCount', allMember.value.length);
+
     } catch (e) {
         console.log('Error:', e.message);
     }
@@ -425,6 +461,7 @@ async function getAllMember() {
 // Get Single Team Member:
 async function getSingleMemeber(id) {
     try {
+        const csrfToken = await refreshCsrfToken();
         const response = await fetch('/cms-api/single-member', {
             method: 'POST',
              credentials: 'include',
@@ -518,7 +555,7 @@ async function updateMember() {
         if (form.image instanceof File) {
             formData.append('image', form.image);
         }
-
+        const csrfToken = await refreshCsrfToken();
         const response = await fetch('/cms-api/team-update', {
             method: 'POST',
              credentials: 'include',
@@ -575,6 +612,7 @@ async function updateMember() {
 
 async function deleteMember(id) {
     try {
+        const csrfToken = await refreshCsrfToken();
         // Confirmation before deleting
         const confirm = await Swal.fire({
             title: 'Are you sure?',

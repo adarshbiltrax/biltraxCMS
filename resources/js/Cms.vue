@@ -9,6 +9,7 @@ import {
     BriefcaseBusiness, Sun, Moon, RefreshCw, LogOut, X, Settings, UserCog, Menu
 } from 'lucide-vue-next';
 import Teams from './Teams.vue';
+import { refreshCsrfToken } from './utils/csrf.js';
 const showModal = ref(false); 
 const mobileNavOpen = ref(false);
 
@@ -38,95 +39,226 @@ function donutData(type) { const s = summary.value.status_breakdown?.[type] || {
 const barOptions = { responsive: true, maintainAspectRatio: false, animation: { duration: 550 }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y} submissions` } } }, scales: { x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#8290a5' } }, y: { beginAtZero: true, grid: { color: 'rgba(130,144,165,.18)' }, ticks: { precision: 0, color: '#8290a5' } } } };
 const donutOptions = { responsive: true, maintainAspectRatio: false, cutout: '76%', plugins: { legend: { display: false } } };
 
-async function api(path, options = {}) { const r = await fetch('/cms-api' + path, { credentials: 'include', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, ...options }); const text = await r.text(); let d = null; if (text) { try { d = JSON.parse(text); } catch { return r.ok ? text : Promise.reject(new Error('Request failed')); } } if (!r.ok) { if (r.status === 401 || r.status === 403) return null; const message = d && typeof d === 'object' ? (d.message || d.error || 'Request failed') : 'Request failed'; throw new Error(message); } return d; }
+// async function api(path, options = {}) { const r = await fetch('/cms-api' + path, { credentials: 'include', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, ...options }); const text = await r.text(); let d = null; if (text) { try { d = JSON.parse(text); } catch { return r.ok ? text : Promise.reject(new Error('Request failed')); } } if (!r.ok) { if (r.status === 401 || r.status === 403) return null; const message = d && typeof d === 'object' ? (d.message || d.error || 'Request failed') : 'Request failed'; throw new Error(message); } return d; }
 // async function login() { error.value = ''; try { const d = await api('/login', { method: 'POST', body: JSON.stringify(credentials) }); if (!d?.user) { throw new Error('Invalid credentials'); } user.value = d.user; await load(); } catch (e) { error.value = e.message; } }
-async function login(){
-    error.value = '';
-    try{
-       const csrfToken = await refreshCsrfToken();
-        // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-       const response = await fetch('/cms-api/login',{
-        method:'POST',
-        // credentials: 'include',
-       headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrfToken
-        },
-        body:JSON.stringify(credentials)
-       }) ;
-        const data = await response.json();
 
-       if(!response.ok){
-         throw new Error( data.message ||"Invalid credentails");
-       }
-        user.value = data.user;
-        await load();
-    //    console.log("Response Value",data);
 
-    }catch(e){
-        error.value = e.message;
-        // console.log("Login error",e);
+// export  async  function refreshCsrfToken() {
+//     const response = await fetch('/csrf-token', {
+//         method: 'GET',
+//         credentials: 'include',
+//         headers: {
+//             Accept: 'application/json',
+//         },
+//         cache: 'no-store',
+//     });
+
+//     if (!response.ok) {
+//         throw new Error('Unable to refresh CSRF token');
+//     }
+
+//     const data = await response.json();
+
+//     if (!data.token) {
+//         throw new Error('CSRF token not received');
+//     }
+
+//     const meta = document.querySelector('meta[name="csrf-token"]');
+
+//     if (meta) {
+//         meta.setAttribute('content', data.token);
+//     }
+
+//     return data.token;
+// }
+
+async function api(path, options = {}) {
+    const method = (options.method || 'GET').toUpperCase();
+
+    const headers = {
+        Accept: 'application/json',
+        ...(options.headers || {}),
+    };
+
+    // CSRF token for all state-changing requests
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        const csrfToken = await refreshCsrfToken();
+        headers['X-CSRF-TOKEN'] = csrfToken;
     }
+
+    // Do not set JSON content type for FormData
+    if (
+        options.body &&
+        !(options.body instanceof FormData) &&
+        !headers['Content-Type']
+    ) {
+        headers['Content-Type'] = 'application/json';
+    }
+
+    const response = await fetch('/cms-api' + path, {
+        ...options,
+        method,
+        credentials: 'include',
+        headers,
+    });
+
+    const text = await response.text();
+
+    let data = null;
+
+    if (text) {
+        try {
+            data = JSON.parse(text);
+        } catch {
+            throw new Error('Invalid server response');
+        }
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data?.message || data?.error || 'Request failed'
+        );
+    }
+
+    return data;
 }
+
+
+// async function login(){
+//     error.value = '';
+//     try{
+//        const csrfToken = await refreshCsrfToken();
+//         // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+//        const response = await fetch('/cms-api/login',{
+//         method:'POST',
+//         // credentials: 'include',
+//        headers: {
+//             'Content-Type': 'application/json',
+//             'Accept': 'application/json',
+//             'X-CSRF-TOKEN': csrfToken
+//         },
+//         body:JSON.stringify(credentials)
+//        }) ;
+//         const data = await response.json();
+
+//        if(!response.ok){
+//          throw new Error( data.message ||"Invalid credentails");
+//        }
+//         user.value = data.user;
+//         await load();
+//     //    console.log("Response Value",data);
+
+//     }catch(e){
+//         error.value = e.message;
+//         // console.log("Login error",e);
+//     }
+// }
 // async function logout() { try { await api('/logout', { method: 'POST' }); user.value = null; selected.value = null; rows.value = []; summary.value = {}; notice.value = ''; error.value = ''; } catch (e) { error.value = e.message; } }
 // logout function ;
-async function logout(){
-    try{
-        const csrfToken = await refreshCsrfToken();
-        // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        // console.log("CSRF Token",csrfToken);
-        const response = await api('/logout',{
-            method:'POST',
-             credentials: 'include',
-            headers:{
-             'Content-Type':'application/json',
-             'Accept':'application/json',
-             'X-CSRF-TOKEN': csrfToken
-            },
-            body:JSON.stringify()
+
+
+async function login() {
+    error.value = '';
+
+    try {
+        const data = await api('/login', {
+            method: 'POST',
+            body: JSON.stringify(credentials),
         });
-        
-        //  console.log("CSRF Token",csrfToken);
-        // console.log("Response LogOut",response);
+
+        if (!data?.user) {
+            throw new Error('Invalid credentials');
+        }
+
+        user.value = data.user;
+
+        // Load authenticated dashboard data
+        await load();
+
+    } catch (e) {
+        error.value = e.message;
+        console.error('Login error:', e);
+    }
+}
+
+
+async function logout() {
+    try {
+        await api('/logout', {
+            method: 'POST',
+            body: JSON.stringify({}),
+        });
+
         user.value = null;
         selected.value = null;
         rows.value = [];
         summary.value = {};
         notice.value = '';
         error.value = '';
-        
-    }catch(e){
-         error.value  = e.message;
-        //  console.log("Logout error",e);
+
+    } catch (e) {
+        error.value = e.message;
+        console.error('Logout error:', e);
     }
 }
+
+
+// async function logout(){
+//     try{
+//         const csrfToken = await refreshCsrfToken();
+//         // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+//         // console.log("CSRF Token",csrfToken);
+//         const response = await api('/logout',{
+//             method:'POST',
+//              credentials: 'include',
+//             headers:{
+//              'Content-Type':'application/json',
+//              'Accept':'application/json',
+//              'X-CSRF-TOKEN': csrfToken
+//             },
+//             body:JSON.stringify()
+//         });
+        
+//         //  console.log("CSRF Token",csrfToken);
+//         // console.log("Response LogOut",response);
+//         user.value = null;
+//         selected.value = null;
+//         rows.value = [];
+//         summary.value = {};
+//         notice.value = '';
+//         error.value = '';
+        
+//     }catch(e){
+//          error.value  = e.message;
+//         //  console.log("Logout error",e);
+//     }
+// }
 
 // refresh Token genrate:
 
-async function refreshCsrfToken() {
-    const response = await fetch('/csrf-token', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-            'Accept': 'application/json',
-        },
-    });
+// async function refreshCsrfToken() {
+//     const response = await fetch('/csrf-token', {
+//         method: 'GET',
+//         credentials: 'include',
+//         headers: {
+//             'Accept': 'application/json',
+//         },
+//     });
 
-    if (!response.ok) {
-        throw new Error('Unable to refresh CSRF token');
-    }
+//     if (!response.ok) {
+//         throw new Error('Unable to refresh CSRF token');
+//     }
 
-    const data = await response.json();
+//     const data = await response.json();
 
-    const meta = document.querySelector('meta[name="csrf-token"]');
+//     const meta = document.querySelector('meta[name="csrf-token"]');
 
-    if (meta && data.token) {
-        meta.setAttribute('content', data.token);
-    }
+//     if (meta && data.token) {
+//         meta.setAttribute('content', data.token);
+//     }
 
-    return data.token;
-}
+//     return data.token;
+// }
 
 async function load() { loading.value = true; error.value = ''; try { const nextSummary = await api('/summary'); summary.value = nextSummary || {}; if (view.value === 'contact' || view.value === 'careers') { const q = new URLSearchParams({ page: String(page.value) }); if (search.value) q.set('search', search.value); if (status.value) q.set('status', status.value); const d = await api('/records/' + view.value + '?' + q); rows.value = d?.data || []; last.value = d?.last_page || 1; } } catch (e) { error.value = e.message; } finally { loading.value = false; } }
 function navigate(v) { view.value = v; page.value = 1; search.value = ''; status.value = ''; selected.value = null; notice.value = ''; load(); }
@@ -304,6 +436,8 @@ function dateLabel(v) { if (!v) return '—'; const d = new Date(v); return isNa
 function onKey(e) { if (e.key === 'Escape') { if (emailConfig.value) closeEmailConfig(); else if (selected.value) selected.value = null; else mobileNavOpen.value = false; } }
 onMounted(async () => { window.addEventListener('keydown', onKey); try { const d = await api('/me'); user.value = d?.user || null; if (user.value) await load(); } catch { user.value = null; } });
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
+
+
 </script>
 
 <template>
