@@ -131,7 +131,7 @@ async function login(){
         // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
        const response = await fetch('/cms-api/login',{
         method:'POST',
-        // credentials: 'include',
+        credentials: 'include',
        headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
