@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // CSRF exceptions
         $middleware->validateCsrfTokens(except: [
             'cms-api/team-create',
+            'cms-api/login',
             'team-members',
             'demoperpose-mail',
             'newCareers-form'
