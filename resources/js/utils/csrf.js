@@ -27,7 +27,7 @@
 //     return data.token;
 // }
 
-async  function refreshCsrfToken() {
+export async  function refreshCsrfToken() {
     const response = await fetch('/csrf-token', {
         method: 'GET',
         credentials: 'include',
