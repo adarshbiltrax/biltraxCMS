@@ -344,6 +344,7 @@ async function saveMember(e) {
 
         const res = await fetch('/cms-api/team-create', {
             method: 'POST',
+            credentials: 'include',
             body: formData,
             headers: {
                 Accept: 'application/json'
@@ -400,6 +401,7 @@ async function getAllMember() {
 
         const response = await fetch('/cms-api/team-member', {
             method: 'POST',
+             credentials: 'include',
             headers: {
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
@@ -425,6 +427,7 @@ async function getSingleMemeber(id) {
     try {
         const response = await fetch('/cms-api/single-member', {
             method: 'POST',
+             credentials: 'include',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
@@ -518,6 +521,7 @@ async function updateMember() {
 
         const response = await fetch('/cms-api/team-update', {
             method: 'POST',
+             credentials: 'include',
             headers: {
                 Accept: 'application/json',
                 'X-CSRF-TOKEN': csrfToken || ''
@@ -598,6 +602,7 @@ async function deleteMember(id) {
 
         const response = await fetch('/cms-api/team-delete', {
             method: 'DELETE',
+             credentials: 'include',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
