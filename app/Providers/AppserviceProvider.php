@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppserviceProvider extends ServiceProvider
@@ -22,5 +23,8 @@ class AppserviceProvider extends ServiceProvider
     {
         // store default string length;
         Schema::defaultStringLength(191);
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }
