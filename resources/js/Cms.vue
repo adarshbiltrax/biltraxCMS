@@ -161,18 +161,27 @@ async function login() {
     error.value = '';
 
     try {
-        const data = await api('/login', {
+        const csrfToken = await refreshCsrfToken();
+
+        const response = await fetch('/cms-api/login', {
             method: 'POST',
-            body: JSON.stringify(credentials),
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify(credentials)
         });
 
-        if (!data?.user) {
-            throw new Error('Invalid credentials');
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Login failed');
         }
 
         user.value = data.user;
 
-        // Load authenticated dashboard data
         await load();
 
     } catch (e) {
@@ -180,7 +189,6 @@ async function login() {
         console.error('Login error:', e);
     }
 }
-
 
 async function logout() {
     try {
