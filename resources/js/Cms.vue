@@ -9,7 +9,7 @@ import {
     BriefcaseBusiness, Sun, Moon, RefreshCw, LogOut, X, Settings, UserCog, Menu
 } from 'lucide-vue-next';
 import Teams from './Teams.vue';
-import { refreshCsrfToken } from './utils/csrf.js';
+// import { refreshCsrfToken } from './utils/csrf.js';
 const showModal = ref(false); 
 const mobileNavOpen = ref(false);
 
