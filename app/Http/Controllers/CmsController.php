@@ -70,10 +70,11 @@ public function login(Request $r)
             ], 401);
         }
 
-        // Laravel session guard ke through login
-        Auth::login($user);
+        // Use the same session guard configured in config/auth.php.
+        Auth::guard('web')->login($user);
 
-        // Session ID regenerate karo
+        // Bind the authenticated user to a newly rotated session ID.
+        // Laravel saves the session automatically after the response.
         $r->session()->regenerate();
 
         return response()->json([
@@ -94,14 +95,16 @@ public function login(Request $r)
 
     public function logout(Request $r)
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
         $r->session()->invalidate();
         $r->session()->regenerateToken();
         return response()->json(['message' => 'Signed out']);
     }
     public function me()
     {
-        return response()->json(['user' => Auth::user()->only('id', 'name', 'email')]);
+        return response()->json([
+            'user' => Auth::guard('web')->user()->only('id', 'name', 'email')
+        ]);
     }
 
     public function summary()

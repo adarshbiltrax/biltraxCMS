@@ -347,12 +347,14 @@ async function saveMember(e) {
             formData.append('image', form.image);
         }
 
+        const csrfToken = await refreshCsrfToken();
         const res = await fetch('/cms-api/team-create', {
             method: 'POST',
             credentials: 'include',
             body: formData,
             headers: {
-                Accept: 'application/json'
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrfToken
             }
         });
 
