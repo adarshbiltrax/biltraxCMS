@@ -124,71 +124,71 @@ async function api(path, options = {}) {
 }
 
 
-// async function login(){
-//     error.value = '';
-//     try{
-//        const csrfToken = await refreshCsrfToken();
-//         // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-//        const response = await fetch('/cms-api/login',{
-//         method:'POST',
-//         // credentials: 'include',
-//        headers: {
-//             'Content-Type': 'application/json',
-//             'Accept': 'application/json',
-//             'X-CSRF-TOKEN': csrfToken
-//         },
-//         body:JSON.stringify(credentials)
-//        }) ;
-//         const data = await response.json();
+async function login(){
+    error.value = '';
+    try{
+       const csrfToken = await refreshCsrfToken();
+        // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+       const response = await fetch('/cms-api/login',{
+        method:'POST',
+        // credentials: 'include',
+       headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+        body:JSON.stringify(credentials)
+       }) ;
+        const data = await response.json();
 
-//        if(!response.ok){
-//          throw new Error( data.message ||"Invalid credentails");
-//        }
-//         user.value = data.user;
-//         await load();
-//     //    console.log("Response Value",data);
+       if(!response.ok){
+         throw new Error( data.message ||"Invalid credentails");
+       }
+        user.value = data.user;
+        await load();
+    //    console.log("Response Value",data);
 
-//     }catch(e){
-//         error.value = e.message;
-//         // console.log("Login error",e);
-//     }
-// }
+    }catch(e){
+        error.value = e.message;
+        // console.log("Login error",e);
+    }
+}
 // async function logout() { try { await api('/logout', { method: 'POST' }); user.value = null; selected.value = null; rows.value = []; summary.value = {}; notice.value = ''; error.value = ''; } catch (e) { error.value = e.message; } }
 // logout function ;
 
 
-async function login() {
-    error.value = '';
+// async function login() {
+//     error.value = '';
 
-    try {
-        const csrfToken = await refreshCsrfToken();
+//     try {
+//         const csrfToken = await refreshCsrfToken();
 
-        const response = await fetch('/cms-api/login', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify(credentials)
-        });
+//         const response = await fetch('/cms-api/login', {
+//             method: 'POST',
+//             credentials: 'include',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//                 'Accept': 'application/json',
+//                 'X-CSRF-TOKEN': csrfToken
+//             },
+//             body: JSON.stringify(credentials)
+//         });
 
-        const data = await response.json();
+//         const data = await response.json();
 
-        if (!response.ok) {
-            throw new Error(data.message || 'Login failed');
-        }
+//         if (!response.ok) {
+//             throw new Error(data.message || 'Login failed');
+//         }
 
-        user.value = data.user;
+//         user.value = data.user;
 
-        await load();
+//         await load();
 
-    } catch (e) {
-        error.value = e.message;
-        console.error('Login error:', e);
-    }
-}
+//     } catch (e) {
+//         error.value = e.message;
+//         console.error('Login error:', e);
+//     }
+// }
 
 async function logout() {
     try {
