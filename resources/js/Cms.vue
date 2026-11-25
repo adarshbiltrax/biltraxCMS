@@ -43,34 +43,34 @@ const donutOptions = { responsive: true, maintainAspectRatio: false, cutout: '76
 // async function login() { error.value = ''; try { const d = await api('/login', { method: 'POST', body: JSON.stringify(credentials) }); if (!d?.user) { throw new Error('Invalid credentials'); } user.value = d.user; await load(); } catch (e) { error.value = e.message; } }
 
 
-// export  async  function refreshCsrfToken() {
-//     const response = await fetch('/csrf-token', {
-//         method: 'GET',
-//         credentials: 'include',
-//         headers: {
-//             Accept: 'application/json',
-//         },
-//         cache: 'no-store',
-//     });
+ async  function refreshCsrfToken() {
+    const response = await fetch('/csrf-token', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
+        },
+        cache: 'no-store',
+    });
 
-//     if (!response.ok) {
-//         throw new Error('Unable to refresh CSRF token');
-//     }
+    if (!response.ok) {
+        throw new Error('Unable to refresh CSRF token');
+    }
 
-//     const data = await response.json();
+    const data = await response.json();
 
-//     if (!data.token) {
-//         throw new Error('CSRF token not received');
-//     }
+    if (!data.token) {
+        throw new Error('CSRF token not received');
+    }
 
-//     const meta = document.querySelector('meta[name="csrf-token"]');
+    const meta = document.querySelector('meta[name="csrf-token"]');
 
-//     if (meta) {
-//         meta.setAttribute('content', data.token);
-//     }
+    if (meta) {
+        meta.setAttribute('content', data.token);
+    }
 
-//     return data.token;
-// }
+    return data.token;
+}
 
 async function api(path, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
@@ -202,7 +202,7 @@ async function logout() {
         rows.value = [];
         summary.value = {};
         notice.value = '';
-        error.value = '';
+        error.value = '';   
 
     } catch (e) {
         error.value = e.message;
