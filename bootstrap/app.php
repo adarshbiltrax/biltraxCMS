@@ -16,10 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust Render reverse proxy
         $middleware->trustProxies(at: '*');
 
-        // CSRF exceptions
+        // Keep state-changing CMS routes protected by CSRF.
+        // Public website form routes are the only routes intentionally excluded.
         $middleware->validateCsrfTokens(except: [
-            'cms-api/team-create',
-            'cms-api/login',
             'team-members',
             'demoperpose-mail',
             'newCareers-form'
