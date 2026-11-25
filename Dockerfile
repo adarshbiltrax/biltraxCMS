@@ -16,13 +16,26 @@ WORKDIR /var/www/html
 
 COPY . .
 
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
+# Build frontend assets
 RUN npm install && npm run build
 
-RUN chown -R www-data:www-data storage bootstrap/cache
+# Set Laravel public directory as Apache DocumentRoot
+RUN sed -i 's#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#' \
+    /etc/apache2/sites-available/000-default.conf
 
-RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+# Enable Laravel .htaccess
+RUN printf '<Directory /var/www/html/public>\n\
+    Options FollowSymLinks\n\
+    AllowOverride All\n\
+    Require all granted\n\
+</Directory>\n' > /etc/apache2/conf-available/laravel.conf \
+    && a2enconf laravel
+
+# Set Laravel permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 80
 
