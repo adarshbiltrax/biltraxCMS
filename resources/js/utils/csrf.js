@@ -18,5 +18,11 @@ export async function refreshCsrfToken() {
         throw new Error('CSRF token not received');
     }
 
+    const meta = document.querySelector('meta[name="csrf-token"]');
+
+    if (meta) {
+        meta.setAttribute('content', data.token);
+    }
+
     return data.token;
 }

@@ -127,8 +127,8 @@ async function api(path, options = {}) {
 async function login(){
     error.value = '';
     try{
-    //    const csrfToken = await refreshCsrfToken();
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+       const csrfToken = await refreshCsrfToken();
+        // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
        const response = await fetch('/cms-api/login',{
         method:'POST',
         // credentials: 'include',
